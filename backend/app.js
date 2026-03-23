@@ -32,7 +32,7 @@ app.use('/api/seats',    require('./src/modules/seats/routes'));
 app.use('/api/booking',  require('./src/modules/booking/routes'));
 app.use('/api/payment',  require('./src/modules/payment/routes'));
 app.use('/api/tickets',  require('./src/modules/tickets/routes'));
-app.use('/api/notify',   require('./src/modules/notify/routes'));
+app.use('/api/scanner', require('./src/modules/scanner/routes'));
 app.use('/api/staff',    require('./src/modules/staff/routes'));
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
