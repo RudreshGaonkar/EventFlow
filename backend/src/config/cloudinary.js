@@ -78,4 +78,5 @@ const deleteFile = async (publicId) => {
   }
 };
 
-module.exports = { getCloudinary, uploadFile, deleteFile };
+module.exports = { getCloudinary, uploadFile, deleteFile, configureCloudinary };
+
