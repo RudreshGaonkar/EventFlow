@@ -1,121 +1,82 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { ROLES } from './utils/constants';
 
-function App() {
-  const [count, setCount] = useState(0)
+import LoginPage      from './pages/auth/LoginPage';
+import BrowsePage     from './pages/browse/BrowsePage';
+import EventPage      from './pages/events/EventPage';
+import SeatsPage      from './pages/seats/SeatsPage';
+import CheckoutPage   from './pages/booking/CheckoutPage';
+import ConfirmPage    from './pages/booking/ConfirmPage';
+import MyBookingsPage from './pages/booking/MyBookingsPage';
+import TicketsPage    from './pages/tickets/TicketsPage';
+import AdminPage      from './pages/admin/AdminPage';
+import StaffPage      from './pages/staff/StaffPage';
+import ScannerPage    from './pages/staff/ScannerPage';
 
+const FullPageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-[#0A0E1A]">
+    <div className="w-10 h-10 rounded-full border-2 border-[#6C63FF] border-t-transparent animate-spin" />
+  </div>
+);
+
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <FullPageLoader />;
+  return user ? children : <Navigate to="/login" replace />;
+};
+
+const RoleRoute = ({ children, role }) => {
+  const { user, loading } = useAuth();
+  if (loading) return <FullPageLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role_name !== role) return <Navigate to="/" replace />;
+  return children;
+};
+
+const GuestRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return !user ? children : <Navigate to="/" replace />;
+};
+
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      <Route path="/login" element={
+        <GuestRoute><LoginPage /></GuestRoute>
+      } />
 
-      <div className="ticks"></div>
+      <Route path="/"element={<BrowsePage />} />
+      <Route path="/events/:eventId"element={<EventPage />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <Route path="/events/:eventId/seats/:sessionId" element={
+        <PrivateRoute><SeatsPage /></PrivateRoute>
+      } />
+      <Route path="/checkout" element={
+        <PrivateRoute><CheckoutPage /></PrivateRoute>
+      } />
+      <Route path="/booking/confirm/:bookingId" element={
+        <PrivateRoute><ConfirmPage /></PrivateRoute>
+      } />
+      <Route path="/bookings" element={
+        <PrivateRoute><MyBookingsPage /></PrivateRoute>
+      } />
+      <Route path="/tickets/:bookingId" element={
+        <PrivateRoute><TicketsPage /></PrivateRoute>
+      } />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <Route path="/admin/*" element={
+        <RoleRoute role={ROLES.ADMIN}><AdminPage /></RoleRoute>
+      } />
+      <Route path="/staff" element={
+        <RoleRoute role={ROLES.ADMIN}><StaffPage /></RoleRoute>
+      } />
+      <Route path="/scanner" element={
+        <RoleRoute role={ROLES.STAFF}><ScannerPage /></RoleRoute>
+      } />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
-
-export default App

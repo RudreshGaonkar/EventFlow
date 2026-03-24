@@ -10,140 +10,99 @@ const {
   getUsers, changeUserRole, getRoles
 } = require('./service');
 
-// All admin routes require login + System Admin role
+// ── Public (no auth needed) ───────────────────────────────────────────────────
+router.get('/states/public', getStates);
+
+// ── All routes below require System Admin ─────────────────────────────────────
 router.use(protect);
 router.use(allowRoles('System Admin'));
 
-// ── States 
-
+// ── States
 router.get('/states', getStates);
-
-router.post(
-  '/states',
+router.post('/states',
   [
     body('state_name').trim().notEmpty().withMessage('State name is required'),
     body('state_code').trim().isLength({ min: 2, max: 3 }).withMessage('State code must be 2-3 characters'),
   ],
-  validate,
-  addState
+  validate, addState
 );
-
-router.put(
-  '/states/:state_id',
+router.put('/states/:state_id',
   [
     param('state_id').isInt({ min: 1 }).withMessage('Invalid state ID'),
     body('state_name').trim().notEmpty().withMessage('State name is required'),
     body('state_code').trim().isLength({ min: 2, max: 3 }).withMessage('State code must be 2-3 characters'),
   ],
-  validate,
-  editState
+  validate, editState
 );
-
-router.delete(
-  '/states/:state_id',
-  [
-    param('state_id').isInt({ min: 1 }).withMessage('Invalid state ID'),
-  ],
-  validate,
-  removeState
+router.delete('/states/:state_id',
+  [param('state_id').isInt({ min: 1 }).withMessage('Invalid state ID')],
+  validate, removeState
 );
 
 // ── Cities
-
 router.get('/cities', getCities);
-
-router.post(
-  '/cities',
+router.post('/cities',
   [
     body('state_id').isInt({ min: 1 }).withMessage('Valid state is required'),
     body('city_name').trim().notEmpty().withMessage('City name is required'),
     body('city_multiplier').optional().isFloat({ min: 0.1, max: 10 }).withMessage('Multiplier must be between 0.1 and 10'),
   ],
-  validate,
-  addCity
+  validate, addCity
 );
-
-router.put(
-  '/cities/:city_id',
+router.put('/cities/:city_id',
   [
     param('city_id').isInt({ min: 1 }).withMessage('Invalid city ID'),
     body('city_name').trim().notEmpty().withMessage('City name is required'),
     body('city_multiplier').isFloat({ min: 0.1, max: 10 }).withMessage('Multiplier must be between 0.1 and 10'),
   ],
-  validate,
-  editCity
+  validate, editCity
 );
-
-router.patch(
-  '/cities/:city_id/multiplier',
+router.patch('/cities/:city_id/multiplier',
   [
     param('city_id').isInt({ min: 1 }).withMessage('Invalid city ID'),
     body('city_multiplier').isFloat({ min: 0.1, max: 10 }).withMessage('Multiplier must be between 0.1 and 10'),
   ],
-  validate,
-  editCityMultiplier
+  validate, editCityMultiplier
 );
-
-router.delete(
-  '/cities/:city_id',
-  [
-    param('city_id').isInt({ min: 1 }).withMessage('Invalid city ID'),
-  ],
-  validate,
-  removeCity
+router.delete('/cities/:city_id',
+  [param('city_id').isInt({ min: 1 }).withMessage('Invalid city ID')],
+  validate, removeCity
 );
 
 // ── Venues
-
 router.get('/venues', getVenues);
-
-router.post(
-  '/venues',
+router.post('/venues',
   [
     body('city_id').isInt({ min: 1 }).withMessage('Valid city is required'),
     body('venue_name').trim().notEmpty().withMessage('Venue name is required'),
     body('address').optional().trim(),
     body('total_capacity').isInt({ min: 1 }).withMessage('Capacity must be at least 1'),
   ],
-  validate,
-  addVenue
+  validate, addVenue
 );
-
-router.put(
-  '/venues/:venue_id',
+router.put('/venues/:venue_id',
   [
     param('venue_id').isInt({ min: 1 }).withMessage('Invalid venue ID'),
     body('venue_name').trim().notEmpty().withMessage('Venue name is required'),
     body('address').optional().trim(),
     body('total_capacity').isInt({ min: 1 }).withMessage('Capacity must be at least 1'),
   ],
-  validate,
-  editVenue
+  validate, editVenue
+);
+router.patch('/venues/:venue_id/deactivate',
+  [param('venue_id').isInt({ min: 1 }).withMessage('Invalid venue ID')],
+  validate, deactivateVenue
 );
 
-router.patch(
-  '/venues/:venue_id/deactivate',
-  [
-    param('venue_id').isInt({ min: 1 }).withMessage('Invalid venue ID'),
-  ],
-  validate,
-  deactivateVenue
-);
-
-// ── Users / Role Management 
-
+// ── Users / Role Management
 router.get('/users', getUsers);
-
 router.get('/roles', getRoles);
-
-router.patch(
-  '/users/:user_id/role',
+router.patch('/users/:user_id/role',
   [
     param('user_id').isInt({ min: 1 }).withMessage('Invalid user ID'),
     body('role_id').isInt({ min: 1, max: 4 }).withMessage('Valid role is required'),
   ],
-  validate,
-  changeUserRole
+  validate, changeUserRole
 );
 
 module.exports = router;
