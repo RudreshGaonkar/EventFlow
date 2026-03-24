@@ -1,4 +1,5 @@
 const { uploadFile, deleteFile } = require('../../config/cloudinary');
+const { findUserById } = require('../auth/queries');
 const {
   getAllEvents, getEventById, createEvent, updateEvent, softDeleteEvent,
   getAllPeople, createPerson, updatePerson,
@@ -42,7 +43,6 @@ const addEvent = async (req, res) => {
     let poster_url = null;
     let poster_public_id = null;
 
-    // Upload poster to Cloudinary only if a file was attached
     if (req.file) {
       const uploaded = await uploadFile(req.file.path, 'posters', null);
       poster_url = uploaded.secure_url;
@@ -67,7 +67,6 @@ const editEvent = async (req, res) => {
     const { event_id } = req.params;
     const { title, description, rating, duration_mins, age_limit, language, genre, trailer_url } = req.body;
 
-    // Check event exists and belongs to this organizer
     const existing = await getEventById(event_id);
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Event not found' });
@@ -79,7 +78,6 @@ const editEvent = async (req, res) => {
     let poster_url = existing.poster_url;
     let poster_public_id = existing.poster_public_id;
 
-    // If new poster uploaded, delete old one and upload new
     if (req.file) {
       if (existing.poster_public_id) {
         await deleteFile(existing.poster_public_id);
@@ -174,7 +172,7 @@ const editPerson = async (req, res) => {
   }
 };
 
-// Event People
+// Cast
 
 const getCast = async (req, res) => {
   try {
@@ -306,7 +304,6 @@ const addReview = async (req, res) => {
   try {
     const { event_id, session_id, rating, review_text } = req.body;
 
-    // Must target either event or session — not both, not neither
     if ((event_id && session_id) || (!event_id && !session_id)) {
       return res.status(400).json({ success: false, message: 'Review must target either an event or a session — not both or neither' });
     }
@@ -322,14 +319,21 @@ const addReview = async (req, res) => {
   }
 };
 
-// Browse
+// Browse — ✅ FIXED: fetches home_state_id from DB instead of JWT
 
 const browseSessions = async (req, res) => {
   try {
-    const state_id = req.query.state_id || req.user.home_state_id;
+    let state_id = req.query.state_id;
+
+    if (!state_id) {
+      const user = await findUserById(req.user.user_id);
+      state_id = user?.home_state_id;
+    }
+
     if (!state_id) {
       return res.status(400).json({ success: false, message: 'State is required for browsing' });
     }
+
     const sessions = await getAvailableSessions(state_id);
     return res.status(200).json({ success: true, data: sessions });
   } catch (err) {

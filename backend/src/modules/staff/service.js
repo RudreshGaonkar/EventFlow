@@ -1,73 +1,85 @@
-const bcrypt = require('bcryptjs');
+const bcryptjs = require('bcryptjs');
+const { findUserByEmail } = require('../auth/queries');
 const {
-  createStaff,
-  findStaffById,
+  createStaffMember,
   findAllStaff,
-  toggleStaffActive,
-  updateStaffRole
+  findStaffMemberById,
+  setActiveStatus
 } = require('./queries');
-const { findByEmail } = require('../auth/queries');
-
-const VALID_STAFF_ROLES = ['staff', 'scanner'];
 
 const addStaff = async (req, res) => {
-  const { full_name, email, password, role } = req.body;
+  try {
+    const { full_name, email, password, phone } = req.body;
 
-  if (!full_name || !email || !password || !role) {
-    return res.status(400).json({ message: 'All fields are required' });
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'full_name, email and password are required' });
+    }
+
+    const existing = await findUserByEmail(email);
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Email already in use' });
+    }
+
+    const password_hash = await bcryptjs.hash(password, 12);
+    const user_id = await createStaffMember(full_name, email, password_hash, phone);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Venue Staff account created',
+      data: { user_id }
+    });
+  } catch (err) {
+    console.error('[Staff] addStaff error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not create staff member' });
   }
-
-  if (!VALID_STAFF_ROLES.includes(role)) {
-    return res.status(400).json({ message: 'Invalid role. Must be staff or scanner' });
-  }
-
-  const existing = await findByEmail(email);
-  if (existing) {
-    return res.status(409).json({ message: 'Email already in use' });
-  }
-
-  const hashed = await bcrypt.hash(password, 10);
-  const newId = await createStaff(full_name, email, hashed, role, req.user.id);
-
-  return res.status(201).json({ message: 'Staff created', id: newId });
 };
 
 const getAllStaff = async (req, res) => {
-  const staff = await findAllStaff();
-  return res.json(staff);
+  try {
+    const staff = await findAllStaff();
+    return res.status(200).json({ success: true, data: staff });
+  } catch (err) {
+    console.error('[Staff] getAllStaff error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch staff' });
+  }
 };
 
 const getStaffById = async (req, res) => {
-  const member = await findStaffById(req.params.id);
-  if (!member) return res.status(404).json({ message: 'Staff member not found' });
-  return res.json(member);
-};
-
-const setStaffActive = async (req, res) => {
-  const { is_active } = req.body;
-  if (typeof is_active !== 'boolean') {
-    return res.status(400).json({ message: 'is_active must be a boolean' });
+  try {
+    const member = await findStaffMemberById(req.params.user_id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Staff member not found' });
+    }
+    return res.status(200).json({ success: true, data: member });
+  } catch (err) {
+    console.error('[Staff] getStaffById error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch staff member' });
   }
-
-  const member = await findStaffById(req.params.id);
-  if (!member) return res.status(404).json({ message: 'Staff member not found' });
-
-  await toggleStaffActive(req.params.id, is_active);
-  return res.json({ message: `Staff member ${is_active ? 'activated' : 'deactivated'}` });
 };
 
-const changeStaffRole = async (req, res) => {
-  const { role } = req.body;
+const toggleActive = async (req, res) => {
+  try {
+    const { is_active } = req.body;
 
-  if (!VALID_STAFF_ROLES.includes(role)) {
-    return res.status(400).json({ message: 'Invalid role. Must be staff or scanner' });
+    if (typeof is_active !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'is_active must be a boolean' });
+    }
+
+    const member = await findStaffMemberById(req.params.user_id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: 'Staff member not found' });
+    }
+
+    await setActiveStatus(req.params.user_id, is_active);
+
+    return res.status(200).json({
+      success: true,
+      message: `Staff member ${is_active ? 'activated' : 'deactivated'}`
+    });
+  } catch (err) {
+    console.error('[Staff] toggleActive error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not update status' });
   }
-
-  const member = await findStaffById(req.params.id);
-  if (!member) return res.status(404).json({ message: 'Staff member not found' });
-
-  await updateStaffRole(req.params.id, role);
-  return res.json({ message: 'Staff role updated' });
 };
 
-module.exports = { addStaff, getAllStaff, getStaffById, setStaffActive, changeStaffRole };
+module.exports = { addStaff, getAllStaff, getStaffById, toggleActive };

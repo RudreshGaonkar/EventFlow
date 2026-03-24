@@ -1,52 +1,49 @@
 const db = require('../../config/db');
 
-const createStaff = async (full_name, email, hashed_password, role, created_by) => {
+const createStaffMember = async (full_name, email, password_hash, phone) => {
+  // role_id 4 = Venue Staff (from your roles table seed)
   const [result] = await db.query(
-    `INSERT INTO users (full_name, email, password, role, created_by)
-     VALUES (?, ?, ?, ?, ?)`,
-    [full_name, email, hashed_password, role, created_by]
+    `INSERT INTO users (role_id, full_name, email, password_hash, phone, is_active)
+     VALUES (4, ?, ?, ?, ?, TRUE)`,
+    [full_name, email, password_hash, phone || null]
   );
   return result.insertId;
 };
 
-const findStaffById = async (id) => {
-  const [rows] = await db.query(
-    `SELECT id, full_name, email, role, is_active, created_at
-     FROM users
-     WHERE id = ? AND role IN ('staff', 'scanner')`,
-    [id]
-  );
-  return rows[0] || null;
-};
-
 const findAllStaff = async () => {
   const [rows] = await db.query(
-    `SELECT id, full_name, email, role, is_active, created_at
-     FROM users
-     WHERE role IN ('staff', 'scanner')
-     ORDER BY created_at DESC`
+    `SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active, u.created_at,
+            r.role_name
+     FROM users u
+     JOIN roles r ON r.role_id = u.role_id
+     WHERE u.role_id = 4
+     ORDER BY u.created_at DESC`
   );
   return rows;
 };
 
-const toggleStaffActive = async (id, is_active) => {
-  await db.query(
-    `UPDATE users SET is_active = ? WHERE id = ? AND role IN ('staff', 'scanner')`,
-    [is_active, id]
+const findStaffMemberById = async (user_id) => {
+  const [rows] = await db.query(
+    `SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active, u.created_at,
+            r.role_name
+     FROM users u
+     JOIN roles r ON r.role_id = u.role_id
+     WHERE u.user_id = ? AND u.role_id = 4`,
+    [user_id]
   );
+  return rows[0] || null;
 };
 
-const updateStaffRole = async (id, role) => {
+const setActiveStatus = async (user_id, is_active) => {
   await db.query(
-    `UPDATE users SET role = ? WHERE id = ? AND role IN ('staff', 'scanner')`,
-    [role, id]
+    `UPDATE users SET is_active = ? WHERE user_id = ? AND role_id = 4`,
+    [is_active, user_id]
   );
 };
 
 module.exports = {
-  createStaff,
-  findStaffById,
+  createStaffMember,
   findAllStaff,
-  toggleStaffActive,
-  updateStaffRole
+  findStaffMemberById,
+  setActiveStatus
 };

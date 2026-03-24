@@ -15,7 +15,7 @@ const scanTicket = async (req, res) => {
   }
 
   // Call stored procedure to validate and mark as Checked-In
-  const result = await validateTicket(ticket_uuid, req.user.userid);
+  const result = await validateTicket(ticket_uuid, req.user.user_id);
 
   // result_code: 0 = approved, 1 = already used, 2 = not found, 3 = cancelled
   if (result.result_code === 0) {
