@@ -26,13 +26,12 @@ const findUserById = async (userId) => {
   }
 };
 
-const createUser = async (full_name, email, password_hash, phone, home_state_id) => {
+const createUser = async (full_name, email, password_hash, phone, home_state_id, requested_role) => {
   try {
     const pool = getPool();
-    // role_id 3 = Attendee by default on registration
     const [result] = await pool.execute(
-      'INSERT INTO users (role_id, full_name, email, password_hash, phone, home_state_id) VALUES (3, ?, ?, ?, ?, ?)',
-      [full_name, email, password_hash, phone || null, home_state_id || null]
+      'INSERT INTO users (role_id, full_name, email, password_hash, phone, home_state_id, requested_role) VALUES (3, ?, ?, ?, ?, ?, ?)',
+      [full_name, email, password_hash, phone || null, home_state_id || null, requested_role || 'Attendee']
     );
     return result.insertId;
   } catch (err) {

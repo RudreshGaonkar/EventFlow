@@ -1,25 +1,43 @@
 import api from './api';
 
-export const getStates = () => api.get('/admin/states');
-export const addState = (data) => api.post('/admin/states', data);
-export const editState = (id, data) => api.put(`/admin/states/${id}`, data);
-export const removeState = (id) => api.delete(`/admin/states/${id}`);
+// States
+export const getStates    = ()           => api.get('/admin/states');
+export const createState  = (data)       => api.post('/admin/states', data);
+export const updateState  = (id, data)   => api.put(`/admin/states/${id}`, data);
+export const deleteState  = (id)         => api.delete(`/admin/states/${id}`);
 
-export const getCities = (params) => api.get('/admin/cities', { params });
-export const addCity = (data) => api.post('/admin/cities', data);
-export const editCity = (id, data) => api.put(`/admin/cities/${id}`, data);
-export const editCityMultiplier = (id, data) => api.patch(`/admin/cities/${id}/multiplier`, data);
-export const removeCity = (id) => api.delete(`/admin/cities/${id}`);
+// Cities
+export const getCities    = (state_id)   => api.get('/admin/cities', { params: { state_id } });
+export const createCity   = (data)       => api.post('/admin/cities', data);
+export const updateCity   = (id, data)   => api.put(`/admin/cities/${id}`, data);
+export const deleteCity   = (id)         => api.delete(`/admin/cities/${id}`);
 
-export const getVenues = (params) => api.get('/admin/venues', { params });
-export const addVenue = (data) => api.post('/admin/venues', data);
-export const editVenue = (id, data) => api.put(`/admin/venues/${id}`, data);
-export const deactivateVenue = (id) => api.patch(`/admin/venues/${id}/deactivate`);
+// Venues
+export const getVenues       = (city_id) => api.get('/admin/venues', { params: { city_id } });
+export const createVenue     = (data)    => api.post('/admin/venues', data);
+export const updateVenue     = (id, data)=> api.put(`/admin/venues/${id}`, data);
+// ✅ FIX — was DELETE /admin/venues/:id, now PATCH /admin/venues/:id/deactivate
+export const deactivateVenue = (id)      => api.patch(`/admin/venues/${id}/deactivate`);
 
-export const getUsers = () => api.get('/admin/users');
-export const getRoles = () => api.get('/admin/roles');
-export const changeUserRole = (id, data) => api.patch(`/admin/users/${id}/role`, data);
+// Users
+export const getUsers        = ()              => api.get('/admin/users');
+export const getRoles        = ()              => api.get('/admin/roles');
+// ✅ FIX — was PUT, now PATCH
+export const changeUserRole  = (id, role_id)  => api.patch(`/admin/users/${id}/role`, { role_id });
+// ✅ NEW — Admin creates a user directly
+export const createUser      = (data)         => api.post('/admin/users', data);
 
-export const getStaff = () => api.get('/staff');
-export const addStaff = (data) => api.post('/staff', data);
-export const toggleStaffActive = (id, data) => api.patch(`/staff/${id}/active`, data);
+// Events (uses /events routes)
+export const getEvents    = ()           => api.get('/events');
+export const createEvent  = (data)       => api.post('/events', data, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const updateEvent  = (id, data)   => api.put(`/events/${id}`, data, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const deleteEvent  = (id)         => api.delete(`/events/${id}`);
+
+// Sessions (uses /events/:id/sessions)
+export const getSessions         = (event_id)          => api.get(`/events/${event_id}/sessions`);
+export const createSession       = (event_id, data)    => api.post(`/events/${event_id}/sessions`, data);
+export const updateSessionStatus = (session_id, status)=> api.patch(`/events/sessions/${session_id}/status`, { status });

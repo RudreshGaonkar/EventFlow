@@ -7,7 +7,8 @@ const {
   getStates, addState, editState, removeState,
   getCities, addCity, editCity, editCityMultiplier, removeCity,
   getVenues, addVenue, editVenue, deactivateVenue,
-  getUsers, changeUserRole, getRoles
+  getUsers, changeUserRole, getRoles,
+  addUser, // ✅ NEW
 } = require('./service');
 
 // ── Public (no auth needed) ───────────────────────────────────────────────────
@@ -17,7 +18,7 @@ router.get('/states/public', getStates);
 router.use(protect);
 router.use(allowRoles('System Admin'));
 
-// ── States
+// ── States ────────────────────────────────────────────────────────────────────
 router.get('/states', getStates);
 router.post('/states',
   [
@@ -39,7 +40,7 @@ router.delete('/states/:state_id',
   validate, removeState
 );
 
-// ── Cities
+// ── Cities ────────────────────────────────────────────────────────────────────
 router.get('/cities', getCities);
 router.post('/cities',
   [
@@ -69,7 +70,7 @@ router.delete('/cities/:city_id',
   validate, removeCity
 );
 
-// ── Venues
+// ── Venues ────────────────────────────────────────────────────────────────────
 router.get('/venues', getVenues);
 router.post('/venues',
   [
@@ -89,20 +90,35 @@ router.put('/venues/:venue_id',
   ],
   validate, editVenue
 );
+// ✅ FIX — was DELETE, backend expects PATCH
 router.patch('/venues/:venue_id/deactivate',
   [param('venue_id').isInt({ min: 1 }).withMessage('Invalid venue ID')],
   validate, deactivateVenue
 );
 
-// ── Users / Role Management
+// ── Users / Role Management ───────────────────────────────────────────────────
 router.get('/users', getUsers);
 router.get('/roles', getRoles);
+
+// ✅ FIX — was PUT, backend expects PATCH
 router.patch('/users/:user_id/role',
   [
     param('user_id').isInt({ min: 1 }).withMessage('Invalid user ID'),
     body('role_id').isInt({ min: 1, max: 4 }).withMessage('Valid role is required'),
   ],
   validate, changeUserRole
+);
+
+// ✅ NEW — Admin creates a user directly
+router.post('/users',
+  [
+    body('full_name').trim().notEmpty().withMessage('Full name is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('phone').optional().trim(),
+    body('role_id').isInt({ min: 1, max: 4 }).withMessage('Valid role is required'),
+  ],
+  validate, addUser
 );
 
 module.exports = router;

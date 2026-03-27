@@ -1,8 +1,10 @@
+const bcrypt = require('bcryptjs');
 const {
   getAllStates, createState, updateState, deleteState,
   getAllCities, getCitiesByState, createCity, updateCity, updateCityMultiplier, deleteCity,
   getAllVenues, getVenuesByCity, createVenue, updateVenue, softDeleteVenue,
-  getAllUsers, updateUserRole, getAllRoles
+  getAllUsers, updateUserRole, getAllRoles,
+  insertUser, // ✅ NEW
 } = require('./queries');
 
 // ── States ────────────────────────────────────────────────────────────────────
@@ -182,12 +184,9 @@ const changeUserRole = async (req, res) => {
   try {
     const { user_id } = req.params;
     const { role_id } = req.body;
-
-    // Prevent admin from changing their own role accidentally
     if (parseInt(user_id) === req.user.user_id) {
       return res.status(400).json({ success: false, message: 'You cannot change your own role' });
     }
-
     await updateUserRole(user_id, role_id);
     return res.status(200).json({ success: true, message: 'User role updated' });
   } catch (err) {
@@ -206,9 +205,38 @@ const getRoles = async (req, res) => {
   }
 };
 
+// ✅ NEW — Admin creates a user directly with a chosen role
+const addUser = async (req, res) => {
+  try {
+    const { full_name, email, password, phone, role_id } = req.body;
+
+    // Check duplicate email
+    const pool = require('../../config/db').getPool();
+    const [existing] = await pool.execute(
+      'SELECT user_id FROM users WHERE email = ?', [email]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ success: false, message: 'Email already registered' });
+    }
+
+    const password_hash = await bcrypt.hash(password, 12);
+    const userId = await insertUser(full_name, email, password_hash, phone, role_id);
+
+    return res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: { user_id: userId },
+    });
+  } catch (err) {
+    console.error('[Admin] addUser error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not create user' });
+  }
+};
+
 module.exports = {
   getStates, addState, editState, removeState,
   getCities, addCity, editCity, editCityMultiplier, removeCity,
   getVenues, addVenue, editVenue, deactivateVenue,
-  getUsers, changeUserRole, getRoles
+  getUsers, changeUserRole, getRoles,
+  addUser, // ✅ NEW
 };

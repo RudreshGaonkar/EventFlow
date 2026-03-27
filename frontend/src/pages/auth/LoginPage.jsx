@@ -101,18 +101,20 @@ const PasswordField = ({ label, rightSlot, error, show, onToggle, ...props }) =>
 );
 
 export default function LoginPage() {
-  const [tab, setTab]                 = useState('login');
-  const [showPass, setShowPass]       = useState(false);
+  const [tab, setTab]= useState('login');
+  const [showPass, setShowPass]= useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [states, setStates]           = useState([]);
-  const [errors, setErrors]           = useState({});
-  const [form, setForm]               = useState({
+  const [loading, setLoading]= useState(false);
+  const [states, setStates]= useState([]);
+  const [errors, setErrors]= useState({});
+  const [form, setForm]= useState({
     email: '', password: '', confirmPassword: '',
     full_name: '', phone: '', home_state_id: '',
+    requested_role: 'Attendee'
+
   });
 
-  const { setUser }   = useAuth();
+  const { login: authLogin } = useAuth();
   const { showToast } = useToast();
   const navigate      = useNavigate();
 
@@ -144,7 +146,7 @@ export default function LoginPage() {
     try {
       if (tab === 'login') {
         const res = await login({ email: form.email, password: form.password });
-        setUser(res.data.user);
+        authLogin(res.data.data);
         showToast('Welcome back!', 'success');
         navigate('/');
       } else {
@@ -154,6 +156,7 @@ export default function LoginPage() {
           password:      form.password,
           phone:         form.phone         || undefined,
           home_state_id: form.home_state_id || undefined,
+          requested_role: form.requested_role,
         });
         showToast('Account created! Please sign in.', 'success');
         setTab('login');
@@ -330,6 +333,7 @@ export default function LoginPage() {
                       error={errors.full_name}
                     />
                   </motion.div>
+                  
                 )}
               </AnimatePresence>
 
@@ -410,6 +414,23 @@ export default function LoginPage() {
                         </select>
                       </div>
                     </div>
+                   {/* Organizer checkbox */}
+                    <div className="flex items-start gap-3 px-1">
+                      <input
+                        type="checkbox"
+                        id="organizer"
+                        checked={form.requested_role === 'Event Organizer'}
+                        onChange={e => setForm(f => ({
+                          ...f,
+                          requested_role: e.target.checked ? 'Event Organizer' : 'Attendee'
+                        }))}
+                        className="mt-0.5 w-4 h-4 accent-primary cursor-pointer"
+                      />
+                      <label htmlFor="organizer" className="text-sm text-on-surface-variant cursor-pointer leading-snug">
+                        I want to list events as an <span className="text-primary font-semibold">Event Organizer</span>
+                      </label>
+                    </div>
+
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -440,7 +461,7 @@ export default function LoginPage() {
               >
                 {loading
                   ? <><Loader2 size={15} className="animate-spin" /> Processing...</>
-                  : tab === 'login' ? 'Login' : 'Create Account'
+                  : tab === 'login' ? 'Sign in' : 'Sign Up'
                 }
               </motion.button>
             </form>

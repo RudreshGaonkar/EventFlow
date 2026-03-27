@@ -6,7 +6,8 @@ const SALT_ROUNDS = 12;
 
 const registerUser = async (req, res) => {
   try {
-    const { full_name, email, password, phone, home_state_id } = req.body;
+    const { full_name, email, password, phone, home_state_id, requested_role } = req.body;
+
 
     // Check if email already exists
     const existing = await findUserByEmail(email);
@@ -17,7 +18,7 @@ const registerUser = async (req, res) => {
     // Hash password before saving
     const password_hash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    const userId = await createUser(full_name, email, password_hash, phone, home_state_id);
+    const userId = await createUser(full_name, email, password_hash, phone, home_state_id, requested_role);
 
     return res.status(201).json({
       success: true,
