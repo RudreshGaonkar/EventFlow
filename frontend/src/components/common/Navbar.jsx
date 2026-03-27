@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Ticket, Bell, ChevronDown, User,
-  BookOpen, LogOut, Settings, Shield, Menu, X
+  BookOpen, LogOut, Settings, Shield, Menu, X, LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -21,7 +21,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close menus on route change
   useEffect(() => {
     setUserMenuOpen(false);
     setMobileOpen(false);
@@ -64,6 +63,18 @@ export default function Navbar() {
                 hover:bg-amber-400/20 transition-all"
             >
               <Shield size={13} /> Admin
+            </Link>
+          )}
+
+          {/* ✅ Organizer Dashboard link */}
+          {user?.role_name === 'Event Organizer' && (
+            <Link
+              to="/organizer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                text-violet-400 bg-violet-400/10 border border-violet-400/20 rounded-full
+                hover:bg-violet-400/20 transition-all"
+            >
+              <LayoutDashboard size={13} /> Dashboard
             </Link>
           )}
 
@@ -116,7 +127,6 @@ export default function Navbar() {
                       border border-outline-variant/20 rounded-2xl shadow-2xl shadow-black/40
                       overflow-hidden py-1"
                   >
-                    {/* User info */}
                     <div className="px-4 py-3 border-b border-outline-variant/10">
                       <p className="text-sm font-semibold text-white truncate">{user.full_name}</p>
                       <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
@@ -127,8 +137,8 @@ export default function Navbar() {
                     </div>
 
                     {[
-                      { icon: BookOpen, label: 'My Bookings', to: '/bookings'   },
-                      { icon: User,     label: 'Profile',     to: '/profile'    },
+                      { icon: BookOpen, label: 'My Bookings', to: '/bookings' },
+                      { icon: User,     label: 'Profile',     to: '/profile'  },
                     ].map(({ icon: Icon, label, to }) => (
                       <Link key={to} to={to}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm
@@ -196,7 +206,8 @@ export default function Navbar() {
                   {[
                     { label: 'My Bookings', to: '/bookings' },
                     { label: 'Profile',     to: '/profile'  },
-                    ...(user.role_name === 'System Admin' ? [{ label: 'Admin Panel', to: '/admin' }] : []),
+                    ...(user.role_name === 'System Admin'    ? [{ label: 'Admin Panel',         to: '/admin'     }] : []),
+                    ...(user.role_name === 'Event Organizer' ? [{ label: 'Organizer Dashboard', to: '/organizer' }] : []),
                     ...(user.role_name === 'Staff' || user.role_name === 'System Admin' ? [{ label: 'Staff Portal', to: '/staff' }] : []),
                   ].map(({ label, to }) => (
                     <Link key={to} to={to}

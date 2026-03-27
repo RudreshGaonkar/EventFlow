@@ -18,9 +18,10 @@ import MyBookingsPage from './pages/booking/MyBookingsPage';
 import TicketsPage   from './pages/tickets/TicketsPage';
 
 // Role-specific
-import AdminPage   from './pages/admin/AdminPage';
-import StaffPage   from './pages/staff/StaffPage';
-import ScannerPage from './pages/staff/ScannerPage';
+import AdminPage    from './pages/admin/AdminPage';
+import StaffPage    from './pages/staff/StaffPage';
+import ScannerPage  from './pages/staff/ScannerPage';
+import OrganizerPage from './pages/organizer/OrganizerPage'; // ✅ NEW
 
 // Pages that hide the Navbar
 const NO_NAVBAR = ['/login'];
@@ -47,35 +48,40 @@ export default function App() {
     <div className="min-h-screen bg-surface-container-lowest">
       {showNavbar && <Navbar />}
       <ToastProvider>
-      <Routes>
-        {/* Public */}
-        <Route path="/login" element={<LoginPage />} />
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected — any logged in user */}
-        <Route path="/"          element={<PrivateRoute><BrowsePage /></PrivateRoute>} />
-        <Route path="/events/:id" element={<PrivateRoute><EventPage /></PrivateRoute>} />
-        <Route path="/seats/:sessionId" element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
-        <Route path="/checkout"  element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
-        <Route path="/confirm"   element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
-        <Route path="/bookings"  element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
-        <Route path="/tickets/:bookingId" element={<PrivateRoute><TicketsPage /></PrivateRoute>} />
+          {/* Protected — any logged in user */}
+          <Route path="/"                    element={<PrivateRoute><BrowsePage /></PrivateRoute>} />
+          <Route path="/events/:id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
+          <Route path="/seats/:sessionId"    element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
+          <Route path="/checkout"            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+          <Route path="/confirm"             element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
+          <Route path="/bookings"            element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
+          <Route path="/tickets/:bookingId"  element={<PrivateRoute><TicketsPage /></PrivateRoute>} />
 
-        {/* Staff only */}
-        <Route path="/staff"   element={
-          <RoleGuard roles={['Staff', 'System Admin']}><StaffPage /></RoleGuard>
-        } />
-        <Route path="/scanner" element={
-          <RoleGuard roles={['Staff', 'System Admin']}><ScannerPage /></RoleGuard>
-        } />
+          {/* Staff only */}
+          <Route path="/staff" element={
+            <RoleGuard roles={['Staff', 'System Admin']}><StaffPage /></RoleGuard>
+          } />
+          <Route path="/scanner" element={
+            <RoleGuard roles={['Staff', 'System Admin']}><ScannerPage /></RoleGuard>
+          } />
 
-        {/* Admin only */}
-        <Route path="/admin/*" element={
-          <RoleGuard roles={['System Admin']}><AdminPage /></RoleGuard>
-        } />
+          {/* Admin only */}
+          <Route path="/admin/*" element={
+            <RoleGuard roles={['System Admin']}><AdminPage /></RoleGuard>
+          } />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* ✅ Organizer only */}
+          <Route path="/organizer" element={
+            <RoleGuard roles={['Event Organizer']}><OrganizerPage /></RoleGuard>
+          } />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </ToastProvider>
     </div>
   );

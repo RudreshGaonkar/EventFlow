@@ -14,6 +14,7 @@ const {
 // ── Public (no auth needed) ───────────────────────────────────────────────────
 router.get('/states/public', getStates);
 
+router.get('/venues/list', protect, allowRoles('Event Organizer', 'System Admin'), getVenues);
 // ── All routes below require System Admin ─────────────────────────────────────
 router.use(protect);
 router.use(allowRoles('System Admin'));

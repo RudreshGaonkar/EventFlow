@@ -44,7 +44,11 @@ const addEvent = async (req, res) => {
     let poster_public_id = null;
 
     if (req.file) {
-      const uploaded = await uploadFile(req.file.path, 'posters', null);
+      // const uploaded = await uploadFile(req.file.path, 'posters', null);
+      // poster_url = uploaded.secure_url;
+      // poster_public_id = uploaded.public_id;
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const uploaded = await uploadFile(b64, 'posters', null);
       poster_url = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
@@ -79,10 +83,9 @@ const editEvent = async (req, res) => {
     let poster_public_id = existing.poster_public_id;
 
     if (req.file) {
-      if (existing.poster_public_id) {
-        await deleteFile(existing.poster_public_id);
-      }
-      const uploaded = await uploadFile(req.file.path, 'posters', null);
+      if (existing.poster_public_id) await deleteFile(existing.poster_public_id);
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const uploaded = await uploadFile(b64, 'posters', null);
       poster_url = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
@@ -134,7 +137,8 @@ const addPerson = async (req, res) => {
     let photo_public_id = null;
 
     if (req.file) {
-      const uploaded = await uploadFile(req.file.path, 'cast', null);
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const uploaded = await uploadFile(b64, 'cast', null);
       photo_url = uploaded.secure_url;
       photo_public_id = uploaded.public_id;
     }
@@ -156,12 +160,11 @@ const editPerson = async (req, res) => {
     let photo_public_id = req.body.photo_public_id || null;
 
     if (req.file) {
-      if (photo_public_id) {
-        await deleteFile(photo_public_id);
-      }
-      const uploaded = await uploadFile(req.file.path, 'cast', null);
-      photo_url = uploaded.secure_url;
-      photo_public_id = uploaded.public_id;
+       if (photo_public_id) await deleteFile(photo_public_id);
+        const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        const uploaded = await uploadFile(b64, 'cast', null);
+        photo_url = uploaded.secure_url;
+        photo_public_id = uploaded.public_id;
     }
 
     await updatePerson(person_id, real_name, photo_url, photo_public_id, bio);
