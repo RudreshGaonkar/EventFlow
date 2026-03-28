@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Ticket, Bell, ChevronDown, User,
+  Ticket, ChevronDown, User,
   BookOpen, LogOut, Settings, Shield, Menu, X, LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -34,7 +34,7 @@ export default function Navbar() {
     .slice(0, 2) || '?';
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <nav className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled
         ? 'bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/20 shadow-lg shadow-black/20'
         : 'bg-transparent'
@@ -79,7 +79,7 @@ export default function Navbar() {
           )}
 
           {/* Staff link */}
-          {(user?.role_name === 'Staff' || user?.role_name === 'System Admin') && (
+          {(user?.role_name === 'Venue Staff' || user?.role_name === 'System Admin') && (
             <Link
               to="/staff"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
@@ -91,12 +91,12 @@ export default function Navbar() {
           )}
 
           {/* Notifications */}
-          <button className="relative w-9 h-9 flex items-center justify-center
+          {/* <button className="relative w-9 h-9 flex items-center justify-center
             text-on-surface-variant hover:text-white transition-colors rounded-full
             hover:bg-surface-container">
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-          </button>
+          </button> */}
 
           {/* User menu */}
           {user ? (
@@ -203,12 +203,13 @@ export default function Navbar() {
                       <p className="text-xs text-on-surface-variant">{user.role_name}</p>
                     </div>
                   </div>
+
                   {[
                     { label: 'My Bookings', to: '/bookings' },
                     { label: 'Profile',     to: '/profile'  },
                     ...(user.role_name === 'System Admin'    ? [{ label: 'Admin Panel',         to: '/admin'     }] : []),
                     ...(user.role_name === 'Event Organizer' ? [{ label: 'Organizer Dashboard', to: '/organizer' }] : []),
-                    ...(user.role_name === 'Staff' || user.role_name === 'System Admin' ? [{ label: 'Staff Portal', to: '/staff' }] : []),
+                    ...(user.role_name === 'Venue Staff' || user.role_name === 'System Admin' ? [{ label: 'Staff Portal', to: '/staff' }] : []),
                   ].map(({ label, to }) => (
                     <Link key={to} to={to}
                       className="block py-2.5 text-sm text-on-surface-variant hover:text-white transition-colors">

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, CalendarDays, MapPin, Building2,
-  Map, Users, ChevronRight, Menu, X
+  Map, Users, ChevronRight, Menu, X,UserCog
 } from 'lucide-react';
+
 
 import StatesTab   from './tabs/StatesTab';
 import CitiesTab   from './tabs/CitiesTab';
@@ -11,6 +12,7 @@ import VenuesTab   from './tabs/VenuesTab';
 import EventsTab   from './tabs/EventsTab';
 import SessionsTab from './tabs/SessionsTab';
 import UsersTab    from './tabs/UsersTab';
+import StaffTab from './tabs/StaffTab';
 
 const TABS = [
   { key: 'events',   label: 'Events',   icon: LayoutDashboard },
@@ -19,6 +21,7 @@ const TABS = [
   { key: 'cities',   label: 'Cities',   icon: Map             },
   { key: 'states',   label: 'States',   icon: MapPin          },
   { key: 'users',    label: 'Users',    icon: Users           },
+    { key: 'staff',    label: 'Staff',    icon: UserCog },
 ];
 
 export default function AdminPage() {
@@ -32,6 +35,7 @@ export default function AdminPage() {
     cities:   CitiesTab,
     states:   StatesTab,
     users:    UsersTab,
+   staff:    StaffTab,
   }[active];
 
   return (

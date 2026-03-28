@@ -26,6 +26,13 @@ import OrganizerPage from './pages/organizer/OrganizerPage'; // ✅ NEW
 // Pages that hide the Navbar
 const NO_NAVBAR = ['/login'];
 
+function RoleRedirect() {
+    const { user } = useAuth();
+    if (user?.role_name === 'Venue Staff') return <Navigate to="/staff" replace />;
+    if (user?.role_name === 'System Admin') return <Navigate to="/admin" replace />;
+    return <BrowsePage />;
+  }
+
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -37,8 +44,13 @@ const PrivateRoute = ({ children }) => {
       </div>
     </div>
   );
+
+  
+
   return user ? children : <Navigate to="/login" replace />;
 };
+
+
 
 export default function App() {
   const location = useLocation();
@@ -53,7 +65,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
 
           {/* Protected — any logged in user */}
-          <Route path="/"                    element={<PrivateRoute><BrowsePage /></PrivateRoute>} />
+          {/* <Route path="/"element={<PrivateRoute><BrowsePage /></PrivateRoute>} /> */}
+          <Route path="/" element={ <PrivateRoute> <RoleRedirect /> </PrivateRoute>}/>
           <Route path="/events/:id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
           <Route path="/seats/:sessionId"    element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
           <Route path="/checkout"            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
@@ -63,10 +76,10 @@ export default function App() {
 
           {/* Staff only */}
           <Route path="/staff" element={
-            <RoleGuard roles={['Staff', 'System Admin']}><StaffPage /></RoleGuard>
+            <RoleGuard roles={['Venue Staff', 'System Admin']}><StaffPage /></RoleGuard>
           } />
           <Route path="/scanner" element={
-            <RoleGuard roles={['Staff', 'System Admin']}><ScannerPage /></RoleGuard>
+            <RoleGuard roles={['Venue Staff', 'System Admin']}><ScannerPage /></RoleGuard>
           } />
 
           {/* Admin only */}
