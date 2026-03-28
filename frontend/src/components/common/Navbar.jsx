@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Ticket, ChevronDown, User,
-  BookOpen, LogOut, Settings, Shield, Menu, X, LayoutDashboard
+  BookOpen, LogOut, Settings, Shield, Menu, X, LayoutDashboard, Building2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -33,6 +33,9 @@ export default function Navbar() {
     .toUpperCase()
     .slice(0, 2) || '?';
 
+  const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
+  const hasRole = (role) => userRoles.includes(role);
+
   return (
     <nav className={`sticky top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled
@@ -54,10 +57,8 @@ export default function Navbar() {
         {/* Desktop Right */}
         <div className="hidden md:flex items-center gap-3">
 
-          {/* Admin link */}
-          {user?.role_name === 'System Admin' && (
-            <Link
-              to="/admin"
+          {hasRole('System Admin') && (
+            <Link to="/admin"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
                 text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-full
                 hover:bg-amber-400/20 transition-all"
@@ -66,10 +67,8 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* ✅ Organizer Dashboard link */}
-          {user?.role_name === 'Event Organizer' && (
-            <Link
-              to="/organizer"
+          {hasRole('Event Organizer') && (
+            <Link to="/organizer"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
                 text-violet-400 bg-violet-400/10 border border-violet-400/20 rounded-full
                 hover:bg-violet-400/20 transition-all"
@@ -78,10 +77,18 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Staff link */}
-          {(user?.role_name === 'Venue Staff' || user?.role_name === 'System Admin') && (
-            <Link
-              to="/staff"
+          {hasRole('Venue Owner') && (
+            <Link to="/venue-owner"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full
+                hover:bg-emerald-400/20 transition-all"
+            >
+              <Building2 size={13} /> My Venues
+            </Link>
+          )}
+
+          {hasRole('Venue Staff') && (
+            <Link to="/staff"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
                 text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-full
                 hover:bg-blue-400/20 transition-all"
@@ -90,15 +97,6 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Notifications */}
-          {/* <button className="relative w-9 h-9 flex items-center justify-center
-            text-on-surface-variant hover:text-white transition-colors rounded-full
-            hover:bg-surface-container">
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-          </button> */}
-
-          {/* User menu */}
           {user ? (
             <div className="relative">
               <button
@@ -130,10 +128,14 @@ export default function Navbar() {
                     <div className="px-4 py-3 border-b border-outline-variant/10">
                       <p className="text-sm font-semibold text-white truncate">{user.full_name}</p>
                       <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
-                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold
-                        tracking-wide uppercase bg-primary/20 text-primary rounded-full">
-                        {user.role_name}
-                      </span>
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {userRoles.map(r => (
+                          <span key={r} className="px-2 py-0.5 text-[10px] font-bold
+                            tracking-wide uppercase bg-primary/20 text-primary rounded-full">
+                            {r}
+                          </span>
+                        ))}
+                      </div>
                     </div>
 
                     {[
@@ -150,8 +152,7 @@ export default function Navbar() {
                     ))}
 
                     <div className="border-t border-outline-variant/10 mt-1">
-                      <button
-                        onClick={logout}
+                      <button onClick={logout}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm
                           text-red-400 hover:bg-red-500/10 transition-all"
                       >
@@ -163,8 +164,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            <button
-              onClick={() => navigate('/login')}
+            <button onClick={() => navigate('/login')}
               className="px-4 py-2 bg-primary-container text-on-primary-container
                 text-sm font-semibold rounded-full hover:opacity-90 transition-all"
             >
@@ -174,8 +174,7 @@ export default function Navbar() {
         </div>
 
         {/* Mobile hamburger */}
-        <button
-          onClick={() => setMobileOpen(o => !o)}
+        <button onClick={() => setMobileOpen(o => !o)}
           className="md:hidden text-on-surface-variant hover:text-white transition-colors"
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -200,22 +199,24 @@ export default function Navbar() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-white">{user.full_name}</p>
-                      <p className="text-xs text-on-surface-variant">{user.role_name}</p>
+                      <p className="text-xs text-on-surface-variant">{userRoles.join(' · ')}</p>
                     </div>
                   </div>
 
                   {[
                     { label: 'My Bookings', to: '/bookings' },
                     { label: 'Profile',     to: '/profile'  },
-                    ...(user.role_name === 'System Admin'    ? [{ label: 'Admin Panel',         to: '/admin'     }] : []),
-                    ...(user.role_name === 'Event Organizer' ? [{ label: 'Organizer Dashboard', to: '/organizer' }] : []),
-                    ...(user.role_name === 'Venue Staff' || user.role_name === 'System Admin' ? [{ label: 'Staff Portal', to: '/staff' }] : []),
+                    ...(hasRole('System Admin')    ? [{ label: 'Admin Panel',         to: '/admin'       }] : []),
+                    ...(hasRole('Event Organizer') ? [{ label: 'Organizer Dashboard', to: '/organizer'   }] : []),
+                    ...(hasRole('Venue Owner')     ? [{ label: 'My Venues',           to: '/venue-owner' }] : []),
+                    ...(hasRole('Venue Staff')     ? [{ label: 'Staff Portal',        to: '/staff'       }] : []),
                   ].map(({ label, to }) => (
                     <Link key={to} to={to}
                       className="block py-2.5 text-sm text-on-surface-variant hover:text-white transition-colors">
                       {label}
                     </Link>
                   ))}
+
                   <button onClick={logout}
                     className="block w-full text-left py-2.5 text-sm text-red-400 hover:text-red-300 transition-colors">
                     Sign Out

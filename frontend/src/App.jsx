@@ -27,11 +27,18 @@ import OrganizerPage from './pages/organizer/OrganizerPage'; // ✅ NEW
 const NO_NAVBAR = ['/login'];
 
 function RoleRedirect() {
-    const { user } = useAuth();
-    if (user?.role_name === 'Venue Staff') return <Navigate to="/staff" replace />;
-    if (user?.role_name === 'System Admin') return <Navigate to="/admin" replace />;
-    return <BrowsePage />;
-  }
+  const { user } = useAuth();
+
+  const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
+  const hasRole = (role) => userRoles.includes(role);
+
+  if (hasRole('System Admin'))    return <Navigate to="/admin"       replace />;
+  if (hasRole('Venue Staff'))     return <Navigate to="/staff"       replace />;
+  if (hasRole('Event Organizer')) return <Navigate to="/organizer"   replace />;
+  if (hasRole('Venue Owner'))     return <Navigate to="/venue-owner" replace />;
+
+  return <BrowsePage />;
+}
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();

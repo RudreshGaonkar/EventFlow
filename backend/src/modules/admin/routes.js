@@ -7,14 +7,14 @@ const {
   getStates, addState, editState, removeState,
   getCities, addCity, editCity, editCityMultiplier, removeCity,
   getVenues, addVenue, editVenue, deactivateVenue,
-  getUsers, changeUserRole, getRoles,
-  addUser, // ✅ NEW
+  getUsers, grantRole, revokeRole, getRoles,
+  addUser,
 } = require('./service');
 
-// ── Public (no auth needed) ───────────────────────────────────────────────────
+// ── Public ────────────────────────────────────────────────────────────────────
 router.get('/states/public', getStates);
-
 router.get('/venues/list', protect, allowRoles('Event Organizer', 'System Admin'), getVenues);
+
 // ── All routes below require System Admin ─────────────────────────────────────
 router.use(protect);
 router.use(allowRoles('System Admin'));
@@ -91,7 +91,6 @@ router.put('/venues/:venue_id',
   ],
   validate, editVenue
 );
-// ✅ FIX — was DELETE, backend expects PATCH
 router.patch('/venues/:venue_id/deactivate',
   [param('venue_id').isInt({ min: 1 }).withMessage('Invalid venue ID')],
   validate, deactivateVenue
@@ -101,25 +100,31 @@ router.patch('/venues/:venue_id/deactivate',
 router.get('/users', getUsers);
 router.get('/roles', getRoles);
 
-// ✅ FIX — was PUT, backend expects PATCH
-router.patch('/users/:user_id/role',
-  [
-    param('user_id').isInt({ min: 1 }).withMessage('Invalid user ID'),
-    body('role_id').isInt({ min: 1, max: 4 }).withMessage('Valid role is required'),
-  ],
-  validate, changeUserRole
-);
-
-// ✅ NEW — Admin creates a user directly
 router.post('/users',
   [
     body('full_name').trim().notEmpty().withMessage('Full name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
     body('phone').optional().trim(),
-    body('role_id').isInt({ min: 1, max: 4 }).withMessage('Valid role is required'),
+    body('role_id').isInt({ min: 1 }).withMessage('Valid role is required'),
   ],
   validate, addUser
+);
+
+router.patch('/users/:user_id/grant-role',
+  [
+    param('user_id').isInt({ min: 1 }).withMessage('Invalid user ID'),
+    body('role_id').isInt({ min: 1 }).withMessage('Valid role is required'),
+  ],
+  validate, grantRole
+);
+
+router.patch('/users/:user_id/revoke-role',
+  [
+    param('user_id').isInt({ min: 1 }).withMessage('Invalid user ID'),
+    body('role_id').isInt({ min: 1 }).withMessage('Valid role is required'),
+  ],
+  validate, revokeRole
 );
 
 module.exports = router;

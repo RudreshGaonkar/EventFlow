@@ -5,7 +5,11 @@ const allowRoles = (...allowedRoles) => {
         return res.status(401).json({ success: false, message: 'Not authenticated' });
       }
 
-      if (!allowedRoles.includes(req.user.role_name)) {
+      const userRoles = req.user.roles || [req.user.role_name];
+
+      const hasRole = allowedRoles.some(role => userRoles.includes(role));
+
+      if (!hasRole) {
         return res.status(403).json({
           success: false,
           message: `Access denied — requires one of: ${allowedRoles.join(', ')}`

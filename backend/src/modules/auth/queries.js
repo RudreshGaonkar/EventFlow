@@ -26,6 +26,22 @@ const findUserById = async (userId) => {
   }
 };
 
+const findUserRoles = async (userId) => {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.execute(
+      `SELECT r.role_name
+       FROM user_roles ur
+       JOIN roles r ON r.role_id = ur.role_id
+       WHERE ur.user_id = ? AND ur.status = 'Active'`,
+      [userId]
+    );
+    return rows.map(r => r.role_name);
+  } catch (err) {
+    throw new Error('DB error in findUserRoles: ' + err.message);
+  }
+};
+
 const createUser = async (full_name, email, password_hash, phone, home_state_id, requested_role) => {
   try {
     const pool = getPool();
@@ -33,7 +49,13 @@ const createUser = async (full_name, email, password_hash, phone, home_state_id,
       'INSERT INTO users (role_id, full_name, email, password_hash, phone, home_state_id, requested_role) VALUES (3, ?, ?, ?, ?, ?, ?)',
       [full_name, email, password_hash, phone || null, home_state_id || null, requested_role || 'Attendee']
     );
-    return result.insertId;
+    const user_id = result.insertId;
+    await pool.execute(
+      `INSERT INTO user_roles (user_id, role_id, status, approved_at)
+       VALUES (?, 3, 'Active', NOW())`,
+      [user_id]
+    );
+    return user_id;
   } catch (err) {
     throw new Error('DB error in createUser: ' + err.message);
   }
@@ -51,4 +73,4 @@ const updateHomeState = async (userId, home_state_id) => {
   }
 };
 
-module.exports = { findUserByEmail, findUserById, createUser, updateHomeState };
+module.exports = { findUserByEmail, findUserById, findUserRoles, createUser, updateHomeState };

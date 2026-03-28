@@ -17,8 +17,10 @@ const RoleGuard = ({ children, roles = [] }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (roles.length > 0 && !roles.includes(user.role_name)) {
-    return <Navigate to="/" replace />;
+  const userRoles = user.roles || [user.role_name];
+
+  if (roles.length > 0 && !roles.some(r => userRoles.includes(r))) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;

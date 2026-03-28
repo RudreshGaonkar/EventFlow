@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     return () => { controller.abort(); clearTimeout(timeout); };
   }, []);
 
-  const login  = (userData) => setUser(userData);
+  const login = (userData) => setUser(userData);
 
   const logout = async () => {
     try { await api.post('/auth/logout'); } catch {}
@@ -38,10 +38,15 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
-  const isRole = (role) => user?.role_name === role;
+  const hasRole = (role) => {
+    const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
+    return userRoles.includes(role);
+  };
+
+  const isRole = (role) => hasRole(role);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isRole }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isRole, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

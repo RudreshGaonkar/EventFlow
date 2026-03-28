@@ -3,11 +3,9 @@ const {
   getAllStates, createState, updateState, deleteState,
   getAllCities, getCitiesByState, createCity, updateCity, updateCityMultiplier, deleteCity,
   getAllVenues, getVenuesByCity, createVenue, updateVenue, softDeleteVenue,
-  getAllUsers, updateUserRole, getAllRoles,
-  insertUser, // ✅ NEW
+  getAllUsers, updateUserRole, addUserRole, removeUserRole, getAllRoles,
+  insertUser,
 } = require('./queries');
-
-// ── States ────────────────────────────────────────────────────────────────────
 
 const getStates = async (req, res) => {
   try {
@@ -58,8 +56,6 @@ const removeState = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Could not delete state' });
   }
 };
-
-// ── Cities ────────────────────────────────────────────────────────────────────
 
 const getCities = async (req, res) => {
   try {
@@ -121,8 +117,6 @@ const removeCity = async (req, res) => {
   }
 };
 
-// ── Venues ────────────────────────────────────────────────────────────────────
-
 const getVenues = async (req, res) => {
   try {
     const { city_id } = req.query;
@@ -168,8 +162,6 @@ const deactivateVenue = async (req, res) => {
   }
 };
 
-// ── Users / Role Management ───────────────────────────────────────────────────
-
 const getUsers = async (req, res) => {
   try {
     const users = await getAllUsers();
@@ -180,7 +172,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-const changeUserRole = async (req, res) => {
+const grantRole = async (req, res) => {
   try {
     const { user_id } = req.params;
     const { role_id } = req.body;
@@ -188,10 +180,26 @@ const changeUserRole = async (req, res) => {
       return res.status(400).json({ success: false, message: 'You cannot change your own role' });
     }
     await updateUserRole(user_id, role_id);
-    return res.status(200).json({ success: true, message: 'User role updated' });
+    await addUserRole(user_id, role_id, req.user.user_id);
+    return res.status(200).json({ success: true, message: 'Role granted' });
   } catch (err) {
-    console.error('[Admin] changeUserRole error:', err.message);
-    return res.status(500).json({ success: false, message: 'Could not update user role' });
+    console.error('[Admin] grantRole error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not grant role' });
+  }
+};
+
+const revokeRole = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { role_id } = req.body;
+    if (parseInt(user_id) === req.user.user_id) {
+      return res.status(400).json({ success: false, message: 'You cannot revoke your own role' });
+    }
+    await removeUserRole(user_id, role_id);
+    return res.status(200).json({ success: true, message: 'Role revoked' });
+  } catch (err) {
+    console.error('[Admin] revokeRole error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not revoke role' });
   }
 };
 
@@ -205,12 +213,9 @@ const getRoles = async (req, res) => {
   }
 };
 
-// ✅ NEW — Admin creates a user directly with a chosen role
 const addUser = async (req, res) => {
   try {
     const { full_name, email, password, phone, role_id } = req.body;
-
-    // Check duplicate email
     const pool = require('../../config/db').getPool();
     const [existing] = await pool.execute(
       'SELECT user_id FROM users WHERE email = ?', [email]
@@ -218,10 +223,8 @@ const addUser = async (req, res) => {
     if (existing.length > 0) {
       return res.status(409).json({ success: false, message: 'Email already registered' });
     }
-
     const password_hash = await bcrypt.hash(password, 12);
     const userId = await insertUser(full_name, email, password_hash, phone, role_id);
-
     return res.status(201).json({
       success: true,
       message: 'User created successfully',
@@ -237,6 +240,6 @@ module.exports = {
   getStates, addState, editState, removeState,
   getCities, addCity, editCity, editCityMultiplier, removeCity,
   getVenues, addVenue, editVenue, deactivateVenue,
-  getUsers, changeUserRole, getRoles,
-  addUser, // ✅ NEW
+  getUsers, grantRole, revokeRole, getRoles,
+  addUser,
 };
