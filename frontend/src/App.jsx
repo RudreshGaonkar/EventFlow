@@ -21,7 +21,8 @@ import TicketsPage   from './pages/tickets/TicketsPage';
 import AdminPage    from './pages/admin/AdminPage';
 import StaffPage    from './pages/staff/StaffPage';
 import ScannerPage  from './pages/staff/ScannerPage';
-import OrganizerPage from './pages/organizer/OrganizerPage'; // ✅ NEW
+import OrganizerPage from './pages/organizer/OrganizerPage'; 
+import VenueOwnerPage from './pages/venue-owner/VenueOwnerPage';
 
 // Pages that hide the Navbar
 const NO_NAVBAR = ['/login'];
@@ -97,6 +98,10 @@ export default function App() {
           {/* ✅ Organizer only */}
           <Route path="/organizer" element={
             <RoleGuard roles={['Event Organizer']}><OrganizerPage /></RoleGuard>
+          } />
+
+          <Route path="/venue-owner" element={
+            <RoleGuard roles={['Venue Owner']}><VenueOwnerPage /></RoleGuard>
           } />
 
           {/* Fallback */}

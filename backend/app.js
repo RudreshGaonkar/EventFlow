@@ -34,6 +34,8 @@ app.use('/api/payment',  require('./src/modules/payment/routes'));
 app.use('/api/tickets',  require('./src/modules/tickets/routes'));
 app.use('/api/scanner', require('./src/modules/scanner/routes'));
 app.use('/api/staff',    require('./src/modules/staff/routes'));
+app.use('/api/organizer', require('./src//modules/organizer/routes'));
+app.use('/api/venue-owner', require('./src/modules/venue-owner/routes'));
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {

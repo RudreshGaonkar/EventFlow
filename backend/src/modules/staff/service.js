@@ -12,7 +12,8 @@ const {
   findStaffMemberById,
   setActiveStatus,
   assignStaffVenue,
-  checkOrganizerVenue
+  checkOrganizerVenue,
+  findStaffByOrganizerVenues
 } = require('./queries');
 
 const addStaff = async (req, res) => {
@@ -55,36 +56,16 @@ const addStaff = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Could not create staff member' });
   }
 };
-// const addStaff = async (req, res) => {
-//   try {
-//     const { full_name, email, password, phone } = req.body;
-
-//     if (!full_name || !email || !password) {
-//       return res.status(400).json({ success: false, message: 'full_name, email and password are required' });
-//     }
-
-//     const existing = await findUserByEmail(email);
-//     if (existing) {
-//       return res.status(409).json({ success: false, message: 'Email already in use' });
-//     }
-
-//     const password_hash = await bcryptjs.hash(password, 12);
-//     const user_id = await createStaffMember(full_name, email, password_hash, phone);
-
-//     return res.status(201).json({
-//       success: true,
-//       message: 'Venue Staff account created',
-//       data: { user_id }
-//     });
-//   } catch (err) {
-//     console.error('[Staff] addStaff error:', err.message);
-//     return res.status(500).json({ success: false, message: 'Could not create staff member' });
-//   }
-// };
 
 const getAllStaff = async (req, res) => {
   try {
-    const staff = await findAllStaff();
+    const userRoles = req.user.roles || [req.user.role_name];
+    let staff;
+    if (userRoles.includes('System Admin')) {
+      staff = await findAllStaff();
+    } else {
+      staff = await findStaffByOrganizerVenues(req.user.user_id);
+    }
     return res.status(200).json({ success: true, data: staff });
   } catch (err) {
     console.error('[Staff] getAllStaff error:', err.message);

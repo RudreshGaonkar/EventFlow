@@ -62,4 +62,23 @@ const checkOrganizerVenue = async (organizer_id, venue_id) => {
   return rows.length > 0;
 };
 
-module.exports = { createStaffMember, findAllStaff, findStaffMemberById, setActiveStatus, assignStaffVenue, checkOrganizerVenue};
+const findStaffByOrganizerVenues = async (organizer_id) => {
+  const [rows] = await getPool().query(`
+    SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active,
+           v.venue_name, uv.venue_id
+    FROM users u
+    LEFT JOIN user_venues uv ON uv.user_id = u.user_id
+    LEFT JOIN venues v ON v.venue_id = uv.venue_id
+    WHERE u.role_id = (SELECT role_id FROM roles WHERE role_name = 'Venue Staff')
+      AND uv.venue_id IN (
+        SELECT DISTINCT es.venue_id
+        FROM event_sessions es
+        JOIN parent_events pe ON pe.event_id = es.event_id
+        WHERE pe.organizer_id = ?
+      )
+    ORDER BY u.created_at DESC
+  `, [organizer_id]);
+  return rows;
+};
+
+module.exports = { createStaffMember, findAllStaff, findStaffMemberById, setActiveStatus, assignStaffVenue, checkOrganizerVenue, findStaffByOrganizerVenues};

@@ -5,7 +5,7 @@ const { allowRoles } = require('../../middleware/roleMiddleware');
 const { validate } = require('../../middleware/validate');
 const { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue } = require('./service');
 
-router.get('/', protect, allowRoles('System Admin'), getAllStaff);
+router.get('/', protect, allowRoles('System Admin', 'Event Organizer'), getAllStaff);
 
 router.get(
   '/:user_id',

@@ -7,13 +7,13 @@ import AdminModal from '../../../components/common/AdminModal';
 import AdminField from '../../../components/common/AdminField';
 
 const BLANK = {
-  event_type: 'Movie', title: '', description: '', rating: 'U',
+  event_type: 'Movie', title: '', description: '', rating: 'G',
   duration_mins: '', age_limit: '', language: 'English',
   genre: '', trailer_url: '', poster: null
 };
 
 const EVENT_TYPES = ['Movie', 'Play', 'Concert', 'Comedy', 'Sports', 'Other'];
-const RATINGS     = ['U', 'UA', 'A', 'S'];
+const RATINGS     = ['G', 'UA', 'A', 'S'];
 
 export default function EventsTab() {
   const [events,  setEvents]  = useState([]);

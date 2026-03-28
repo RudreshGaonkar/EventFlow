@@ -5,6 +5,8 @@ import { useToast } from '../../../components/common/Toast';
 import AdminTable from '../../../components/common/AdminTable';
 import AdminModal from '../../../components/common/AdminModal';
 import AdminField from '../../../components/common/AdminField';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { getPendingVenues, approveVenue, rejectVenue } from '../../../services/venue-owner';
 
 export default function VenuesTab() {
   const [venues,  setVenues]  = useState([]);
@@ -14,6 +16,7 @@ export default function VenuesTab() {
   const [form,    setForm]    = useState({ city_id: '', venue_name: '', address: '', total_capacity: '' });
   const [saving,  setSaving]  = useState(false);
   const { showToast } = useToast();
+  const [pending, setPending] = useState([]);
 
   const load = async () => {
     setLoading(true);
@@ -21,10 +24,11 @@ export default function VenuesTab() {
       const [vRes, cRes] = await Promise.all([getVenues(), getCities()]);
       setVenues(vRes.data.data || []);
       setCities(cRes.data.data || []);
+      const pRes = await getPendingVenues();
+      setPending(pRes.data.data || []);
     } catch { showToast('Failed to load', 'error'); }
     finally { setLoading(false); }
   };
-
   useEffect(() => { load(); }, []);
 
   const openAdd  = () => { setForm({ city_id: '', venue_name: '', address: '', total_capacity: '' }); setModal({ mode: 'add' }); };
@@ -47,8 +51,56 @@ export default function VenuesTab() {
     catch (e) { showToast(e.response?.data?.message || 'Error', 'error'); }
   };
 
+  const handleApprove = async (id) => {
+    try { await approveVenue(id); showToast('Venue approved', 'success'); load(); }
+    catch (e) { showToast(e.response?.data?.message || 'Error', 'error'); }
+  };
+
+  const handleReject = async (id) => {
+    if (!confirm('Reject this venue?')) return;
+    try { await rejectVenue(id); showToast('Venue rejected', 'success'); load(); }
+    catch (e) { showToast(e.response?.data?.message || 'Error', 'error'); }
+  };
+
   return (
     <>
+    {pending.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock size={15} className="text-yellow-400" />
+            <h3 className="text-sm font-semibold text-yellow-400">
+              Pending Approvals ({pending.length})
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {pending.map(v => (
+              <div key={v.venue_id}
+                className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-white">
+                    {v.venue_name}
+                    <span className="ml-2 text-xs text-on-surface-variant">— {v.city_name}</span>
+                  </p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Submitted by <span className="text-white">{v.owner_name}</span> · {v.owner_email}
+                  </p>
+                  {v.address && <p className="text-xs text-on-surface-variant">{v.address}</p>}
+                </div>
+                <div className="flex items-center gap-2 ml-4 shrink-0">
+                  <button onClick={() => handleApprove(v.venue_id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-xs font-semibold rounded-lg hover:bg-primary/20 transition-all">
+                    <CheckCircle size={13} /> Approve
+                  </button>
+                  <button onClick={() => handleReject(v.venue_id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-error/10 text-error text-xs font-semibold rounded-lg hover:bg-error/20 transition-all">
+                    <XCircle size={13} /> Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <AdminTable title="Venues" onAdd={openAdd} loading={loading}
         columns={['Venue', 'City', 'Capacity', 'Status', 'Actions']}
         rows={venues.map(v => [
