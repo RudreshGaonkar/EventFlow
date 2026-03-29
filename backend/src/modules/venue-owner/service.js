@@ -1,10 +1,9 @@
 const {
   findVenuesByOwner, insertVenue, modifyVenue,
+  findSeatsByVenue, insertSeatsForRow, toggleSeat,
   findPendingVenues, approveVenue, rejectVenue,
-  findStaffByOwner,findAllCities,
+  findStaffByOwner, findAllCities,
 } = require('./queries');
-
-// ── Venue Owner handlers ──────────────────────────────────────────────────────
 
 const getMyVenues = async (req, res) => {
   try {
@@ -38,6 +37,46 @@ const updateVenue = async (req, res) => {
   }
 };
 
+// ── Seats ─────────────────────────────────────────────────────────────────────
+
+const getSeats = async (req, res) => {
+  try {
+    const seats = await findSeatsByVenue(req.params.venue_id, req.user.user_id);
+    return res.status(200).json({ success: true, data: seats });
+  } catch (err) {
+    if (err.message === 'FORBIDDEN')
+      return res.status(403).json({ success: false, message: 'Not your venue' });
+    console.error('[VenueOwner] getSeats:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch seats' });
+  }
+};
+
+const addSeats = async (req, res) => {
+  try {
+    await insertSeatsForRow(req.params.venue_id, req.user.user_id, req.body);
+    return res.status(201).json({ success: true, message: 'Seats added' });
+  } catch (err) {
+    if (err.message === 'FORBIDDEN')
+      return res.status(403).json({ success: false, message: 'Not your venue' });
+    console.error('[VenueOwner] addSeats:', err.message);
+    return res.status(500).json({ success: false, message: err.message || 'Could not add seats' });
+  }
+};
+
+const patchSeat = async (req, res) => {
+  try {
+    await toggleSeat(req.params.seat_id, req.user.user_id, req.body.is_active);
+    return res.status(200).json({ success: true, message: 'Seat updated' });
+  } catch (err) {
+    if (err.message === 'FORBIDDEN')
+      return res.status(403).json({ success: false, message: 'Not your seat' });
+    console.error('[VenueOwner] patchSeat:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not update seat' });
+  }
+};
+
+// ── Staff & Admin ─────────────────────────────────────────────────────────────
+
 const getMyStaff = async (req, res) => {
   try {
     const staff = await findStaffByOwner(req.user.user_id);
@@ -47,8 +86,6 @@ const getMyStaff = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Could not fetch staff' });
   }
 };
-
-// ── Admin approval handlers ───────────────────────────────────────────────────
 
 const getPendingVenues = async (req, res) => {
   try {
@@ -91,6 +128,9 @@ const getCities = async (req, res) => {
 };
 
 module.exports = {
-  getMyVenues, createVenue, updateVenue, getMyStaff,
-  getPendingVenues, approvePendingVenue, rejectPendingVenue, getCities,
+  getMyVenues, createVenue, updateVenue,
+  getSeats, addSeats, patchSeat,
+  getMyStaff,
+  getPendingVenues, approvePendingVenue, rejectPendingVenue,
+  getCities,
 };

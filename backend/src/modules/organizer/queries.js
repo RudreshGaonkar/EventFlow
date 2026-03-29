@@ -79,18 +79,61 @@ const findMySessionsByEvent = async (event_id, organizer_id) => {
 };
 
 const insertSession = async (event_id, organizer_id, fields) => {
-  const [check] = await getPool().query(
-    `SELECT event_id FROM parent_events WHERE event_id = ? AND organizer_id = ?`,
-    [event_id, organizer_id]
-  );
-  if (!check.length) throw new Error('FORBIDDEN');
+  const pool = getPool();
+  const conn = await pool.getConnection();
 
-  const [r] = await getPool().query(
-    `INSERT INTO event_sessions (event_id, venue_id, show_date, show_time, demand_multiplier)
-     VALUES (?, ?, ?, ?, ?)`,
-    [event_id, fields.venue_id, fields.show_date, fields.show_time, fields.demand_multiplier || 1.0]
-  );
-  return r.insertId;
+  try {
+    await conn.beginTransaction();
+
+    // 1. Verify ownership
+    const [check] = await conn.query(
+      `SELECT event_id FROM parent_events WHERE event_id = ? AND organizer_id = ?`,
+      [event_id, organizer_id]
+    );
+    if (!check.length) throw new Error('FORBIDDEN');
+
+    // 2. Count active seats for this venue
+    const [[{ seatCount }]] = await conn.query(
+      `SELECT COUNT(*) AS seatCount FROM seats WHERE venue_id = ? AND is_active = 1`,
+      [fields.venue_id]
+    );
+
+    // 3. Insert the session with total_seats pre-filled
+    const [r] = await conn.query(
+      `INSERT INTO event_sessions
+         (event_id, venue_id, show_date, show_time, demand_multiplier, total_seats)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        event_id,
+        fields.venue_id,
+        fields.show_date,
+        fields.show_time,
+        fields.demand_multiplier || 1.0,
+        seatCount,
+      ]
+    );
+    const session_id = r.insertId;
+
+    // 4. Populate session_seats from venue's seat inventory
+    if (seatCount > 0) {
+      await conn.query(
+        `INSERT INTO session_seats (session_id, seat_id, status)
+         SELECT ?, seat_id, 'Available'
+         FROM seats
+         WHERE venue_id = ? AND is_active = 1`,
+        [session_id, fields.venue_id]
+      );
+    }
+
+    await conn.commit();
+    return session_id;
+
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 };
 
 const setSessionStatus = async (session_id, organizer_id, status) => {

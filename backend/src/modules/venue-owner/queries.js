@@ -39,7 +39,87 @@ const modifyVenue = async (venue_id, owner_id, fields) => {
   await getPool().query(`UPDATE venues SET ${cols.join(', ')} WHERE venue_id = ?`, vals);
 };
 
-// ── Admin approval queries ────────────────────────────────────────────────────
+// ── Seat Management ───────────────────────────────────────────────────────────
+
+const findSeatsByVenue = async (venue_id, owner_id) => {
+  const [check] = await getPool().query(
+    `SELECT venue_id FROM venues WHERE venue_id = ? AND owner_id = ?`,
+    [venue_id, owner_id]
+  );
+  if (!check.length) throw new Error('FORBIDDEN');
+
+  const [rows] = await getPool().query(
+    `SELECT s.seat_id, s.seat_row, s.seat_number, s.seat_label, s.is_active,
+            st.tier_name, st.base_price, st.tier_id
+     FROM seats s
+     JOIN seat_tiers st ON st.tier_id = s.tier_id
+     WHERE s.venue_id = ?
+     ORDER BY s.seat_row, s.seat_number`,
+    [venue_id]
+  );
+  return rows;
+};
+
+const insertSeatsForRow = async (venue_id, owner_id, fields) => {
+  // fields: { tier_id, seat_row, seat_count }
+  const [check] = await getPool().query(
+    `SELECT venue_id FROM venues WHERE venue_id = ? AND owner_id = ?`,
+    [venue_id, owner_id]
+  );
+  if (!check.length) throw new Error('FORBIDDEN');
+
+  const { tier_id, seat_row, seat_count } = fields;
+  const row = seat_row.toUpperCase();
+  const count = parseInt(seat_count);
+  if (count < 1 || count > 50) throw new Error('Seat count must be 1–50');
+
+  const values = [];
+  for (let n = 1; n <= count; n++) {
+    values.push([venue_id, tier_id, row, n, `${row}-${n}`]);
+  }
+
+  await getPool().query(
+    `INSERT IGNORE INTO seats (venue_id, tier_id, seat_row, seat_number, seat_label)
+     VALUES ?`,
+    [values]
+  );
+
+  // Sync total_capacity
+  await getPool().query(
+    `UPDATE venues SET total_capacity = (
+       SELECT COUNT(*) FROM seats WHERE venue_id = ? AND is_active = 1
+     ) WHERE venue_id = ?`,
+    [venue_id, venue_id]
+  );
+};
+
+const toggleSeat = async (seat_id, owner_id, is_active) => {
+  const [check] = await getPool().query(
+    `SELECT s.seat_id FROM seats s
+     JOIN venues v ON v.venue_id = s.venue_id
+     WHERE s.seat_id = ? AND v.owner_id = ?`,
+    [seat_id, owner_id]
+  );
+  if (!check.length) throw new Error('FORBIDDEN');
+
+  await getPool().query(
+    `UPDATE seats SET is_active = ? WHERE seat_id = ?`,
+    [is_active ? 1 : 0, seat_id]
+  );
+
+  // Sync total_capacity
+  const [[{ venue_id }]] = await getPool().query(
+    `SELECT venue_id FROM seats WHERE seat_id = ?`, [seat_id]
+  );
+  await getPool().query(
+    `UPDATE venues SET total_capacity = (
+       SELECT COUNT(*) FROM seats WHERE venue_id = ? AND is_active = 1
+     ) WHERE venue_id = ?`,
+    [venue_id, venue_id]
+  );
+};
+
+// ── Admin approval ────────────────────────────────────────────────────────────
 
 const findPendingVenues = async () => {
   const [rows] = await getPool().query(
@@ -69,7 +149,7 @@ const rejectVenue = async (venue_id) => {
   );
 };
 
-// ── Staff for venue owner ─────────────────────────────────────────────────────
+// ── Staff ─────────────────────────────────────────────────────────────────────
 
 const findStaffByOwner = async (owner_id) => {
   const [rows] = await getPool().query(
@@ -79,9 +159,7 @@ const findStaffByOwner = async (owner_id) => {
      LEFT JOIN user_venues uv ON uv.user_id = u.user_id
      LEFT JOIN venues v ON v.venue_id = uv.venue_id
      WHERE u.role_id = (SELECT role_id FROM roles WHERE role_name = 'Venue Staff')
-       AND uv.venue_id IN (
-         SELECT venue_id FROM venues WHERE owner_id = ?
-       )
+       AND uv.venue_id IN (SELECT venue_id FROM venues WHERE owner_id = ?)
      ORDER BY u.created_at DESC`,
     [owner_id]
   );
@@ -100,6 +178,7 @@ const findAllCities = async () => {
 
 module.exports = {
   findVenuesByOwner, insertVenue, modifyVenue,
+  findSeatsByVenue, insertSeatsForRow, toggleSeat,
   findPendingVenues, approveVenue, rejectVenue,
   findStaffByOwner, findAllCities,
 };

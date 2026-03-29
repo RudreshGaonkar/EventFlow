@@ -36,6 +36,8 @@ app.use('/api/scanner', require('./src/modules/scanner/routes'));
 app.use('/api/staff',    require('./src/modules/staff/routes'));
 app.use('/api/organizer', require('./src//modules/organizer/routes'));
 app.use('/api/venue-owner', require('./src/modules/venue-owner/routes'));
+app.use('/api/browse', require('./src/modules/browse/routes'));
+const { updateSessionStatuses } = require('./src/jobs/sessionStatusUpdater');
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -56,5 +58,10 @@ app.use((err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 });
+
+updateSessionStatuses();
+
+// Then every 5 minutes
+setInterval(updateSessionStatuses, 5 * 60 * 1000);
 
 module.exports = app;

@@ -4,7 +4,7 @@ import Navbar from './components/common/Navbar';
 import RoleGuard from './components/common/RoleGuard';
 import Skeleton from './components/common/LoadingSkeleton';
 import { ToastProvider } from './components/common/Toast'; 
-
+import Footer from './components/common/Footer';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 
@@ -75,7 +75,7 @@ export default function App() {
           {/* Protected — any logged in user */}
           {/* <Route path="/"element={<PrivateRoute><BrowsePage /></PrivateRoute>} /> */}
           <Route path="/" element={ <PrivateRoute> <RoleRedirect /> </PrivateRoute>}/>
-          <Route path="/events/:id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
+          <Route path="/events/:event_id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
           <Route path="/seats/:sessionId"    element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
           <Route path="/checkout"            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
           <Route path="/confirm"             element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
@@ -108,6 +108,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ToastProvider>
+      {showNavbar && <Footer />}
     </div>
   );
 }

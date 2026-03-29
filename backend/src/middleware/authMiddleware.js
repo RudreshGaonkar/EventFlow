@@ -2,7 +2,11 @@ const jwt = require('jsonwebtoken');
 
 const protect = (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    // Read from Authorization header: "Bearer <token>"
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : req.cookies?.token; // fallback to cookie if present
 
     if (!token) {
       return res.status(401).json({ success: false, message: 'Not authenticated — no token' });
