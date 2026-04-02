@@ -1,142 +1,97 @@
-const crypto = require('crypto');
-const { getClient } = require('../../config/redis');
-const { fetchBookingById } = require('../booking/service');
-const { callConfirmBooking, getPaymentByBookingId, markBookingFailed } = require('./queries');
+const { getStripe }= require('../../config/stripe');
+const {
+  callConfirmBooking,
+  getBookingByStripeSession,
+  markBookingFailed,
+  getTicketsByBooking,
+} = require('./queries');
 
-// Verify Razorpay HMAC-SHA256 signature
-const verifySignature = (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
-  const body = razorpay_order_id + '|' + razorpay_payment_id;
-  const expected = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-    .update(body)
-    .digest('hex');
-  return expected === razorpay_signature;
-};
+// ── Stripe Webhook ────────────────────────────────────────────────────────────
+const handleWebhook = async (req, res) => {
+  const stripe    = getStripe();
+  const sig= req.headers['stripe-signature'];
+  const secret    = process.env.STRIPE_WEBHOOK_SECRET;
 
-const verifyPayment = async (req, res) => {
+  let event;
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, booking_id } = req.body;
-    const user_id = req.user.user_id;
-
-    // Verify HMAC signature before any DB write
-    const isValid = verifySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
-    if (!isValid) {
-      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
-    }
-
-    // Fetch booking and verify ownership
-    const booking = await fetchBookingById(booking_id);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-    if (booking.user_id !== user_id) {
-      return res.status(403).json({ success: false, message: 'Not your booking' });
-    }
-
-    // Check booking is still Pending
-    if (booking.booking_status !== 'Pending') {
-      return res.status(400).json({ success: false, message: 'Booking is no longer pending' });
-    }
-
-    // Check payment not already processed
-    const existingPayment = await getPaymentByBookingId(booking_id);
-    if (existingPayment && existingPayment.payment_status === 'Success') {
-      return res.status(409).json({ success: false, message: 'Payment already processed' });
-    }
-
-    // Push to Redis queue for consumer worker to process
-    const redis = getClient();
-    const payload = JSON.stringify({
-      booking_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      amount: booking.total_amount,
-      session_id: booking.session_id,
-      user_id
-    });
-
-    await redis.lpush('booking:queue', payload);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Payment verified — booking is being confirmed'
-    });
+    event = stripe.webhooks.constructEvent(req.body, sig, secret);
   } catch (err) {
-    console.error('[Payment] verifyPayment error:', err.message);
-    return res.status(500).json({ success: false, message: 'Payment verification failed' });
+    console.error('[Payment] Webhook signature failed:', err.message);
+    return res.status(400).json({ success: false, message: 'Webhook signature invalid' });
+  }
+
+  try {
+    switch (event.type) {
+
+      case 'checkout.session.completed': {
+        const session   = event.data.object;
+        const booking_id = parseInt(session.metadata?.booking_id);
+
+        if (!booking_id) {
+          console.warn('[Payment] No booking_id in metadata');
+          break;
+        }
+
+        const result = await callConfirmBooking(
+          booking_id,
+          session.payment_intent,   // stripe_payment_intent_id
+          sig,                      // stripe_signature
+          session.amount_total / 100
+        );
+
+        if (result.result_code === 0) {
+          console.log(`[Payment] Booking ${booking_id} confirmed ✅`);
+        } else {
+          console.error(`[Payment] confirm_booking failed for ${booking_id}:`, result.result_msg);
+        }
+        break;
+      }
+
+      case 'checkout.session.expired': {
+        const session    = event.data.object;
+        const booking_id = parseInt(session.metadata?.booking_id);
+
+        if (!booking_id) break;
+
+        await markBookingFailed(booking_id);
+        console.log(`[Payment] Booking ${booking_id} expired — seats released`);
+        break;
+      }
+
+      default:
+        // Ignore all other events
+        break;
+    }
+
+    return res.status(200).json({ received: true });
+
+  } catch (err) {
+    console.error('[Payment] Webhook handler error:', err.message);
+    return res.status(500).json({ success: false, message: 'Webhook processing failed' });
   }
 };
 
-const handlePaymentFailure = async (req, res) => {
-  try {
-    const { booking_id } = req.body;
-    const user_id = req.user.user_id;
-
-    const booking = await fetchBookingById(booking_id);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
-    }
-    if (booking.user_id !== user_id) {
-      return res.status(403).json({ success: false, message: 'Not your booking' });
-    }
-    if (booking.booking_status !== 'Pending') {
-      return res.status(400).json({ success: false, message: 'Booking is no longer pending' });
-    }
-
-    await markBookingFailed(booking_id);
-
-    // Invalidate seat cache so freed seats show immediately
-    const redis = getClient();
-    await redis.del('seats:avail:' + booking.session_id);
-
-    return res.status(200).json({ success: true, message: 'Booking cancelled due to payment failure' });
-  } catch (err) {
-    console.error('[Payment] handlePaymentFailure error:', err.message);
-    return res.status(500).json({ success: false, message: 'Could not process payment failure' });
-  }
-};
-
-const getPaymentStatus = async (req, res) => {
+// ── Get tickets for a confirmed booking (called from frontend) ─────────────────
+const getBookingTickets = async (req, res) => {
   try {
     const { booking_id } = req.params;
-    const user_id = req.user.user_id;
 
-    const booking = await fetchBookingById(booking_id);
-    if (!booking) {
-      return res.status(404).json({ success: false, message: 'Booking not found' });
+    // Only owner can fetch their tickets
+    const booking = await getBookingByStripeSession(
+      req.query.stripe_session_id || ''
+    );
+
+    const tickets = await getTicketsByBooking(booking_id);
+
+    if (!tickets.length) {
+      return res.status(404).json({ success: false, message: 'No tickets found' });
     }
-    if (booking.user_id !== user_id) {
-      return res.status(403).json({ success: false, message: 'Not your booking' });
-    }
 
-    const payment = await getPaymentByBookingId(booking_id);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        booking_status: booking.booking_status,
-        payment: payment || null
-      }
-    });
+    return res.status(200).json({ success: true, data: tickets });
   } catch (err) {
-    console.error('[Payment] getPaymentStatus error:', err.message);
-    return res.status(500).json({ success: false, message: 'Could not fetch payment status' });
+    console.error('[Payment] getBookingTickets:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch tickets' });
   }
 };
 
-// Exported for booking consumer — not an HTTP handler
-const confirmBooking = async (booking_id, razorpay_payment_id, razorpay_signature, amount) => {
-  try {
-    const result = await callConfirmBooking(booking_id, razorpay_payment_id, razorpay_signature, amount);
-    return result;
-  } catch (err) {
-    throw new Error('Could not confirm booking: ' + err.message);
-  }
-};
-
-module.exports = {
-  verifyPayment,
-  handlePaymentFailure,
-  getPaymentStatus,
-  confirmBooking
-};
+module.exports = { handleWebhook, getBookingTickets };

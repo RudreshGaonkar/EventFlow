@@ -6,8 +6,8 @@ const createClient = () => {
   try {
     client = new Redis(process.env.REDIS_URL, {
       maxRetriesPerRequest:    3,
-      enableReadyCheck:        true,
-      reconnectOnError:        (err) => {
+      enableReadyCheck:true,
+      reconnectOnError:(err) => {
         console.error('[Redis] Connection error — retrying:', err.message);
         return true;
       },

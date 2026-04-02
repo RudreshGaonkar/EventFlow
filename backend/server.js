@@ -1,12 +1,11 @@
 require('dotenv').config();
 
-const app                        = require('./app');
-const { testConnection }         = require('./src/config/db');
+const app= require('./app');
+const { testConnection }= require('./src/config/db');
 const { getClient, disconnectClient } = require('./src/config/redis');
-const { configureCloudinary }    = require('./src/config/cloudinary');
-const { getRazorpay }            = require('./src/config/razorpay');
+const { configureCloudinary }= require('./src/config/cloudinary');
 const { start: startConsumer,
-        stop:  stopConsumer }    = require('./src/workers/bookingConsumer');
+        stop:  stopConsumer }= require('./src/workers/bookingConsumer');
 
 const PORT = process.env.PORT || 5000;
 
@@ -24,8 +23,7 @@ const startServer = async () => {
     configureCloudinary();
 
     // ── 4. Init Razorpay ───────────────────────────────────────────────────────
-    getRazorpay();
-
+    
     // ── 5. Start booking consumer worker ──────────────────────────────────────
     startConsumer();
 

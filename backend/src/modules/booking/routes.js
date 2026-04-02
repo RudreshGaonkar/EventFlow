@@ -1,17 +1,17 @@
 const router = require('express').Router();
 const { body, param } = require('express-validator');
-const { protect } = require('../../middleware/authMiddleware');
-const { allowRoles } = require('../../middleware/roleMiddleware');
-const { bookingLimiter } = require('../../middleware/rateLimiter');
-const { validate } = require('../../middleware/validate');
+const { protect }       = require('../../middleware/authMiddleware');
+const { allowRoles }    = require('../../middleware/roleMiddleware');
+const { bookingLimiter }= require('../../middleware/rateLimiter');
+const { validate }      = require('../../middleware/validate');
 const {
   createBooking,
   getMyBookings,
   getBookingDetail,
-  cancelMyBooking
+  cancelMyBooking,
 } = require('./service');
 
-// Create a new booking
+// ── Create booking + Stripe Checkout Session ──────────────────────────────────
 router.post(
   '/',
   protect,
@@ -26,7 +26,7 @@ router.post(
   createBooking
 );
 
-// Get all bookings for logged in user
+// ── All bookings for logged in user ───────────────────────────────────────────
 router.get(
   '/my',
   protect,
@@ -34,7 +34,7 @@ router.get(
   getMyBookings
 );
 
-// Get single booking detail
+// ── Single booking detail ─────────────────────────────────────────────────────
 router.get(
   '/:booking_id',
   protect,
@@ -44,7 +44,7 @@ router.get(
   getBookingDetail
 );
 
-// Cancel a booking
+// ── Cancel booking ────────────────────────────────────────────────────────────
 router.patch(
   '/:booking_id/cancel',
   protect,

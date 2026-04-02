@@ -5,15 +5,15 @@ let pool = null;
 const createPool = () => {
   try {
     pool = mysql.createPool({
-      host:               process.env.DB_HOST,
-      port:               parseInt(process.env.DB_PORT) || 3306,
-      user:               process.env.DB_USER,
-      password:           process.env.DB_PASSWORD,
-      database:           process.env.DB_NAME,
+      host:process.env.DB_HOST,
+      port:parseInt(process.env.DB_PORT) || 3306,
+      user:process.env.DB_USER,
+      password:process.env.DB_PASSWORD,
+      database:process.env.DB_NAME,
       waitForConnections: true,
-      connectionLimit:    parseInt(process.env.DB_POOL_LIMIT) || 10,
-      queueLimit:         0,
-      timezone:           '+00:00',
+      connectionLimit:parseInt(process.env.DB_POOL_LIMIT) || 10,
+      queueLimit:0,
+      timezone:'+00:00',
     });
 
     console.log('[DB] MySQL connection pool created');

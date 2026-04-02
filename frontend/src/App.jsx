@@ -76,7 +76,7 @@ export default function App() {
           {/* <Route path="/"element={<PrivateRoute><BrowsePage /></PrivateRoute>} /> */}
           <Route path="/" element={ <PrivateRoute> <RoleRedirect /> </PrivateRoute>}/>
           <Route path="/events/:event_id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
-          <Route path="/seats/:sessionId"    element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
+          <Route path="/session/:session_id/seats" element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
           <Route path="/checkout"            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
           <Route path="/confirm"             element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
           <Route path="/bookings"            element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />

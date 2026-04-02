@@ -159,7 +159,7 @@ export default function EventPage() {
     .filter((p, i, arr) => arr.findIndex(x => x.person_id === p.person_id) === i);
 
   const handleSelect = (session) => {
-    navigate(`/seats/${session.session_id}`, { state: { event, session } });
+    navigate(`/session/${session.session_id}/seats`, { state: { event, session } });
   };
 
   return (
