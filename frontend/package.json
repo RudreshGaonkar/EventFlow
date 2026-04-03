@@ -12,7 +12,7 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
     "@tailwindcss/vite": "^4.2.2",
-    "axios": "^1.13.6",
+    "axios": "1.13.6",
     "dompurify": "^3.3.3",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.0.1",

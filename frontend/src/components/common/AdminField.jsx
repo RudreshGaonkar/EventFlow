@@ -6,8 +6,8 @@ export default function AdminField({ label, ...props }) {
       </label>
       <input
         className="w-full px-4 py-2.5 bg-surface-container-highest border-none
-          focus:ring-2 focus:ring-primary/50 text-white rounded-xl transition-all
-          placeholder:text-outline-variant outline-none text-sm"
+          focus:ring-2 focus:ring-primary/50 text-on-surface rounded-xl transition-all
+          placeholder:text-on-surface-variant/50 outline-none text-sm"
         {...props}
       />
     </div>

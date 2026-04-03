@@ -26,4 +26,18 @@ const protect = (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const optionalAuth = (req, res, next) => {
+  const header = req.headers.authorization;
+  if (!header) return next(); // guest — no token, just continue
+
+  try {
+    const token = header.split(' ')[1];
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    // invalid/expired token — treat as guest
+    req.user = null;
+  }
+  next();
+};
+
+module.exports = { protect ,optionalAuth};

@@ -27,12 +27,58 @@ const getEventById = async (event_id) => {
   }
 };
 
-const createEvent = async (organizer_id, event_type, title, description, rating, duration_mins, age_limit, language, genre, poster_url, poster_public_id, trailer_url) => {
+const createEvent = async (
+  organizer_id, event_type, title, description,
+  rating, duration_mins, age_limit, language, genre,
+  poster_url, poster_public_id, trailer_url,
+  // ── Registration fields ──
+  registration_mode   = 'booking',
+  participation_type  = 'solo',
+  max_participants    = null,
+  min_team_size       = 1,
+  max_team_size       = 1,
+  registration_fee    = 0,
+  event_scope         = 'national',
+  listing_days_ahead  = null,        // auto-set below if not provided
+) => {
   try {
     const pool = getPool();
+
+    // Auto-set listing window: registration events get 30 days, booking gets 5
+    const days = listing_days_ahead ??
+      (registration_mode === 'booking' ? 5 : 30);
+
     const [result] = await pool.execute(
-      'INSERT INTO parent_events (organizer_id, event_type, title, description, rating, duration_mins, age_limit, language, genre, poster_url, poster_public_id, trailer_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [organizer_id, event_type, title, description || null, rating || null, duration_mins || null, age_limit || null, language || null, genre || null, poster_url || null, poster_public_id || null, trailer_url || null]
+      `INSERT INTO parent_events (
+        organizer_id, event_type, title, description,
+        rating, duration_mins, age_limit, language, genre,
+        poster_url, poster_public_id, trailer_url,
+        registration_mode, participation_type,
+        max_participants, min_team_size, max_team_size,
+        registration_fee, event_scope, listing_days_ahead
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        organizer_id,
+        event_type,
+        title,
+        description         || null,
+        rating              || null,
+        duration_mins       || null,
+        age_limit           || null,
+        language            || null,
+        genre               || null,
+        poster_url          || null,
+        poster_public_id    || null,
+        trailer_url         || null,
+        registration_mode,
+        participation_type,
+        max_participants,
+        min_team_size,
+        max_team_size,
+        registration_fee,
+        event_scope,
+        days,
+      ]
     );
     return result.insertId;
   } catch (err) {
@@ -40,12 +86,68 @@ const createEvent = async (organizer_id, event_type, title, description, rating,
   }
 };
 
-const updateEvent = async (event_id, title, description, rating, duration_mins, age_limit, language, genre, poster_url, poster_public_id, trailer_url) => {
+const updateEvent = async (
+  event_id, title, description,
+  rating, duration_mins, age_limit, language, genre,
+  poster_url, poster_public_id, trailer_url,
+  // ── Registration fields ──
+  registration_mode   = 'booking',
+  participation_type  = 'solo',
+  max_participants    = null,
+  min_team_size       = 1,
+  max_team_size       = 1,
+  registration_fee    = 0,
+  event_scope         = 'national',
+  listing_days_ahead  = null,
+) => {
   try {
     const pool = getPool();
+
+    const days = listing_days_ahead ??
+      (registration_mode === 'booking' ? 5 : 30);
+
     await pool.execute(
-      'UPDATE parent_events SET title = ?, description = ?, rating = ?, duration_mins = ?, age_limit = ?, language = ?, genre = ?, poster_url = ?, poster_public_id = ?, trailer_url = ? WHERE event_id = ?',
-      [title, description || null, rating || null, duration_mins || null, age_limit || null, language || null, genre || null, poster_url || null, poster_public_id || null, trailer_url || null, event_id]
+      `UPDATE parent_events SET
+        title               = ?,
+        description         = ?,
+        rating              = ?,
+        duration_mins       = ?,
+        age_limit           = ?,
+        language            = ?,
+        genre               = ?,
+        poster_url          = ?,
+        poster_public_id    = ?,
+        trailer_url         = ?,
+        registration_mode   = ?,
+        participation_type  = ?,
+        max_participants    = ?,
+        min_team_size       = ?,
+        max_team_size       = ?,
+        registration_fee    = ?,
+        event_scope         = ?,
+        listing_days_ahead  = ?
+      WHERE event_id = ?`,
+      [
+        title,
+        description         || null,
+        rating              || null,
+        duration_mins       || null,
+        age_limit           || null,
+        language            || null,
+        genre               || null,
+        poster_url          || null,
+        poster_public_id    || null,
+        trailer_url         || null,
+        registration_mode,
+        participation_type,
+        max_participants,
+        min_team_size,
+        max_team_size,
+        registration_fee,
+        event_scope,
+        days,
+        event_id,
+      ]
     );
   } catch (err) {
     throw new Error('DB error in updateEvent: ' + err.message);
@@ -158,12 +260,24 @@ const getSessionsByEvent = async (event_id) => {
   }
 };
 
-const createSession = async (event_id, venue_id, show_date, show_time, demand_multiplier) => {
+const createSession = async (
+  event_id, venue_id, show_date, show_time, demand_multiplier,
+  requires_registration = 0,
+  session_max_participants = null,
+) => {
   try {
     const pool = getPool();
     const [result] = await pool.execute(
-      'INSERT INTO event_sessions (event_id, venue_id, show_date, show_time, demand_multiplier) VALUES (?, ?, ?, ?, ?)',
-      [event_id, venue_id, show_date, show_time, demand_multiplier || 1.00]
+      `INSERT INTO event_sessions
+         (event_id, venue_id, show_date, show_time, demand_multiplier,
+          requires_registration, session_max_participants)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        event_id, venue_id, show_date, show_time,
+        demand_multiplier || 1.00,
+        requires_registration ? 1 : 0,
+        session_max_participants || null,
+      ]
     );
     return result.insertId;
   } catch (err) {

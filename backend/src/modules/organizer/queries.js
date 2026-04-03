@@ -1,7 +1,5 @@
 const { getPool } = require('../../config/db');
 
-// ── Events ────────────────────────────────────────────────────────────────────
-
 const findMyEvents = async (organizer_id) => {
   const [rows] = await getPool().query(
     `SELECT * FROM parent_events
@@ -16,20 +14,32 @@ const insertEvent = async (organizer_id, fields) => {
   const [r] = await getPool().query(
     `INSERT INTO parent_events
      (organizer_id, event_type, title, description, rating, duration_mins,
-      age_limit, language, genre, poster_url, trailer_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      age_limit, language, genre, poster_url, trailer_url, brochure_url,
+      registration_mode, event_scope, listing_days_ahead,
+      registration_fee, participation_type, max_participants,
+      min_team_size, max_team_size)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       organizer_id,
-      fields.event_type   || 'Movie',
+      fields.event_type          || 'Movie',
       fields.title,
-      fields.description  || null,
-      fields.rating       || 'G',
-      fields.duration_mins|| null,
-      fields.age_limit    || null,
-      fields.language     || 'English',
-      fields.genre        || null,
-      fields.poster_url   || null,
-      fields.trailer_url  || null,
+      fields.description         || null,
+      fields.rating              || 'G',
+      fields.duration_mins       || null,
+      fields.age_limit           || null,
+      fields.language            || 'English',
+      fields.genre               || null,
+      fields.poster_url          || null,
+      fields.trailer_url         || null,
+      fields.brochure_url        || null,
+      fields.registration_mode   || 'booking',
+      fields.event_scope         || 'national',
+      fields.listing_days_ahead  || 5,
+      fields.registration_fee    || 0.00,
+      fields.participation_type  || 'solo',
+      fields.max_participants    || null,
+      fields.min_team_size       || null,
+      fields.max_team_size       || null,
     ]
   );
   return r.insertId;
@@ -42,8 +52,13 @@ const modifyEvent = async (event_id, organizer_id, fields) => {
   );
   if (!check.length) throw new Error('FORBIDDEN');
 
-  const allowed = ['event_type','title','description','rating','duration_mins',
-                   'age_limit','language','genre','poster_url','trailer_url'];
+  const allowed = [
+    'event_type', 'title', 'description', 'rating', 'duration_mins',
+    'age_limit', 'language', 'genre', 'poster_url', 'trailer_url',
+    'brochure_url', 'registration_mode', 'event_scope', 'listing_days_ahead',
+    'registration_fee', 'participation_type', 'max_participants',
+    'min_team_size', 'max_team_size',
+  ];
   const cols = [], vals = [];
   for (const k of allowed) {
     if (fields[k] !== undefined) { cols.push(`${k} = ?`); vals.push(fields[k]); }
@@ -62,8 +77,6 @@ const softDeleteEvent = async (event_id, organizer_id) => {
   await getPool().query(`UPDATE parent_events SET is_active = 0 WHERE event_id = ?`, [event_id]);
 };
 
-// ── Sessions ──────────────────────────────────────────────────────────────────
-
 const findMySessionsByEvent = async (event_id, organizer_id) => {
   const [rows] = await getPool().query(
     `SELECT es.*, v.venue_name, c.city_name
@@ -81,53 +94,49 @@ const findMySessionsByEvent = async (event_id, organizer_id) => {
 const insertSession = async (event_id, organizer_id, fields) => {
   const pool = getPool();
   const conn = await pool.getConnection();
-
   try {
     await conn.beginTransaction();
 
-    // 1. Verify ownership
     const [check] = await conn.query(
       `SELECT event_id FROM parent_events WHERE event_id = ? AND organizer_id = ?`,
       [event_id, organizer_id]
     );
     if (!check.length) throw new Error('FORBIDDEN');
 
-    // 2. Count active seats for this venue
     const [[{ seatCount }]] = await conn.query(
       `SELECT COUNT(*) AS seatCount FROM seats WHERE venue_id = ? AND is_active = 1`,
       [fields.venue_id]
     );
 
-    // 3. Insert the session with total_seats pre-filled
     const [r] = await conn.query(
       `INSERT INTO event_sessions
-         (event_id, venue_id, show_date, show_time, demand_multiplier, total_seats)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+         (event_id, venue_id, show_date, show_time, demand_multiplier,
+          total_seats, requires_registration, session_max_participants)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         event_id,
         fields.venue_id,
         fields.show_date,
         fields.show_time,
-        fields.demand_multiplier || 1.0,
+        fields.demand_multiplier        || 1.0,
         seatCount,
+        fields.requires_registration    ? 1 : 0,
+        fields.session_max_participants || null,
       ]
     );
     const session_id = r.insertId;
 
-    // 4. Populate session_seats from venue's seat inventory
     if (seatCount > 0) {
       await conn.query(
         `INSERT INTO session_seats (session_id, seat_id, status)
          SELECT ?, seat_id, 'Available'
-         FROM seats
-         WHERE venue_id = ? AND is_active = 1`,
+         FROM seats WHERE venue_id = ? AND is_active = 1`,
         [session_id, fields.venue_id]
       );
     }
 
     await conn.commit();
     return session_id;
-
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -161,8 +170,6 @@ const setSessionMultiplier = async (session_id, organizer_id, multiplier) => {
   );
 };
 
-// ── Venues ────────────────────────────────────────────────────────────────────
-
 const findAllVenues = async () => {
   const [rows] = await getPool().query(
     `SELECT v.venue_id, v.venue_name, v.address, v.total_capacity,
@@ -175,8 +182,6 @@ const findAllVenues = async () => {
   );
   return rows;
 };
-
-// ── People ────────────────────────────────────────────────────────────────────
 
 const findAllPeople = async () => {
   const [rows] = await getPool().query(
@@ -202,8 +207,6 @@ const modifyPerson = async (person_id, real_name, bio, photo_url) => {
   await getPool().query(`UPDATE people SET ${cols.join(', ')} WHERE person_id = ?`, vals);
 };
 
-// ── Cast ──────────────────────────────────────────────────────────────────────
-
 const findCastByEvent = async (event_id) => {
   const [rows] = await getPool().query(
     `SELECT ep.event_person_id, ep.role_type, ep.character_name,
@@ -224,7 +227,6 @@ const insertCastMember = async (event_id, organizer_id, fields) => {
     [event_id, organizer_id]
   );
   if (!check.length) throw new Error('FORBIDDEN');
-
   const [r] = await getPool().query(
     `INSERT INTO event_people (event_id, person_id, role_type, character_name, designation, billing_order)
      VALUES (?, ?, ?, ?, ?, ?)`,
@@ -252,7 +254,6 @@ const deleteCastMember = async (event_person_id, organizer_id) => {
 module.exports = {
   findMyEvents, insertEvent, modifyEvent, softDeleteEvent,
   findMySessionsByEvent, insertSession, setSessionStatus, setSessionMultiplier,
-  findAllVenues,
-  findAllPeople, insertPerson, modifyPerson,
+  findAllVenues, findAllPeople, insertPerson, modifyPerson,
   findCastByEvent, insertCastMember, deleteCastMember,
 };

@@ -1,36 +1,43 @@
 const bcryptjs = require('bcryptjs');
 const { findUserByEmail } = require('../auth/queries');
-// const {
-//   createStaffMember,
-//   findAllStaff,
-//   findStaffMemberById,
-//   setActiveStatus
-// } = require('./queries');
 const {
   createStaffMember,
   findAllStaff,
   findStaffMemberById,
   setActiveStatus,
   assignStaffVenue,
-  checkOrganizerVenue,
-  findStaffByOrganizerVenues
+  findVenueById,
+  findStaffByOrganizerVenues,
 } = require('./queries');
 
+
+// ── Add Staff ─────────────────────────────────────────────────────────────────
 const addStaff = async (req, res) => {
   try {
     const { full_name, email, password, phone, venue_id } = req.body;
 
     if (!full_name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'full_name, email and password are required' });
+      return res.status(400).json({
+        success: false,
+        message: 'full_name, email and password are required',
+      });
     }
 
+    // Organisers must provide a venue — but we only check it EXISTS & is active,
+    // NOT whether it has their sessions. Staff are venue-scoped, not event-scoped.
     if (req.user.role_name === 'Event Organizer') {
       if (!venue_id) {
-        return res.status(400).json({ success: false, message: 'Organizers must assign a venue when creating staff' });
+        return res.status(400).json({
+          success: false,
+          message: 'Organizers must assign a venue when creating staff',
+        });
       }
-      const isTheirVenue = await checkOrganizerVenue(req.user.user_id, venue_id);
-      if (!isTheirVenue) {
-        return res.status(403).json({ success: false, message: 'That venue is not linked to your events' });
+      const venue = await findVenueById(venue_id);
+      if (!venue) {
+        return res.status(404).json({ success: false, message: 'Venue not found' });
+      }
+      if (!venue.is_active) {
+        return res.status(400).json({ success: false, message: 'Venue is inactive' });
       }
     }
 
@@ -49,7 +56,7 @@ const addStaff = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Venue Staff account created',
-      data: { user_id }
+      data: { user_id },
     });
   } catch (err) {
     console.error('[Staff] addStaff error:', err.message);
@@ -57,15 +64,17 @@ const addStaff = async (req, res) => {
   }
 };
 
+
+// ── Get All Staff ─────────────────────────────────────────────────────────────
 const getAllStaff = async (req, res) => {
   try {
-    const userRoles = req.user.roles || [req.user.role_name];
-    let staff;
-    if (userRoles.includes('System Admin')) {
-      staff = await findAllStaff();
-    } else {
-      staff = await findStaffByOrganizerVenues(req.user.user_id);
-    }
+    // FIX: [] is truthy — check length, not just existence
+    const userRoles = req.user.roles?.length ? req.user.roles : [req.user.role_name];
+
+    const staff = userRoles.includes('System Admin')
+      ? await findAllStaff()
+      : await findStaffByOrganizerVenues(req.user.user_id);
+
     return res.status(200).json({ success: true, data: staff });
   } catch (err) {
     console.error('[Staff] getAllStaff error:', err.message);
@@ -73,6 +82,8 @@ const getAllStaff = async (req, res) => {
   }
 };
 
+
+// ── Get Staff By ID ───────────────────────────────────────────────────────────
 const getStaffById = async (req, res) => {
   try {
     const member = await findStaffMemberById(req.params.user_id);
@@ -86,6 +97,8 @@ const getStaffById = async (req, res) => {
   }
 };
 
+
+// ── Toggle Active ─────────────────────────────────────────────────────────────
 const toggleActive = async (req, res) => {
   try {
     const { is_active } = req.body;
@@ -103,7 +116,7 @@ const toggleActive = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Staff member ${is_active ? 'activated' : 'deactivated'}`
+      message: `Staff member ${is_active ? 'activated' : 'deactivated'}`,
     });
   } catch (err) {
     console.error('[Staff] toggleActive error:', err.message);
@@ -111,13 +124,22 @@ const toggleActive = async (req, res) => {
   }
 };
 
+
+// ── Assign Venue ──────────────────────────────────────────────────────────────
 const assignVenue = async (req, res) => {
   try {
     const { venue_id } = req.body;
+
     const member = await findStaffMemberById(req.params.user_id);
     if (!member) {
       return res.status(404).json({ success: false, message: 'Staff member not found' });
     }
+
+    const venue = await findVenueById(venue_id);
+    if (!venue) {
+      return res.status(404).json({ success: false, message: 'Venue not found' });
+    }
+
     await assignStaffVenue(req.params.user_id, venue_id);
     return res.status(200).json({ success: true, message: 'Venue assigned' });
   } catch (err) {
@@ -125,5 +147,6 @@ const assignVenue = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Could not assign venue' });
   }
 };
+
 
 module.exports = { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue };

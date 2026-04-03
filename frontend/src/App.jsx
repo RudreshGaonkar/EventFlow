@@ -16,6 +16,9 @@ import CheckoutPage  from './pages/booking/CheckoutPage';
 import ConfirmPage   from './pages/booking/ConfirmPage';
 import MyBookingsPage from './pages/booking/MyBookingsPage';
 import TicketsPage   from './pages/tickets/TicketsPage';
+import RegistrationConfirmPage from './pages/registration/RegistrationConfirmPage';
+import RegistrationCancelPage  from './pages/registration/RegistrationCancelPage';
+import MyRegistrationsPage     from './pages/registration/MyRegistrationsPage';
 
 // Role-specific
 import AdminPage    from './pages/admin/AdminPage';
@@ -33,10 +36,10 @@ function RoleRedirect() {
   const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
   const hasRole = (role) => userRoles.includes(role);
 
-  if (hasRole('System Admin'))    return <Navigate to="/admin"       replace />;
-  if (hasRole('Venue Staff'))     return <Navigate to="/staff"       replace />;
+  if (hasRole('System Admin'))return <Navigate to="/admin"replace />;
+  if (hasRole('Venue Staff'))return <Navigate to="/staff"replace />;
   if (hasRole('Event Organizer')) return <Navigate to="/organizer"   replace />;
-  if (hasRole('Venue Owner'))     return <Navigate to="/venue-owner" replace />;
+  if (hasRole('Venue Owner'))return <Navigate to="/venue-owner" replace />;
 
   return <BrowsePage />;
 }
@@ -75,12 +78,15 @@ export default function App() {
           {/* Protected — any logged in user */}
           {/* <Route path="/"element={<PrivateRoute><BrowsePage /></PrivateRoute>} /> */}
           <Route path="/" element={ <PrivateRoute> <RoleRedirect /> </PrivateRoute>}/>
-          <Route path="/events/:event_id"          element={<PrivateRoute><EventPage /></PrivateRoute>} />
+          <Route path="/events/:event_id"element={<PrivateRoute><EventPage /></PrivateRoute>} />
           <Route path="/session/:session_id/seats" element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
-          <Route path="/checkout"            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
-          <Route path="/confirm"             element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
-          <Route path="/bookings"            element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
+          <Route path="/checkout"element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+          <Route path="/confirm"element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
+          <Route path="/bookings"element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
           <Route path="/tickets/:bookingId"  element={<PrivateRoute><TicketsPage /></PrivateRoute>} />
+          <Route path="/registration/confirm"element={<PrivateRoute><RegistrationConfirmPage /></PrivateRoute>} />
+          <Route path="/registration/cancel"element={<PrivateRoute><RegistrationCancelPage /></PrivateRoute>} />
+          <Route path="/my-registrations"element={<PrivateRoute><MyRegistrationsPage /></PrivateRoute>} />
 
           {/* Staff only */}
           <Route path="/staff" element={

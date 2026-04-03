@@ -1,5 +1,6 @@
 const { getPool } = require('../../config/db');
 
+
 const createStaffMember = async (full_name, email, password_hash, phone) => {
   const [result] = await getPool().query(
     `INSERT INTO users (role_id, full_name, email, password_hash, phone, is_active)
@@ -8,6 +9,7 @@ const createStaffMember = async (full_name, email, password_hash, phone) => {
   );
   return result.insertId;
 };
+
 
 const findAllStaff = async () => {
   const [rows] = await getPool().query(`
@@ -22,6 +24,7 @@ const findAllStaff = async () => {
   return rows;
 };
 
+
 const findStaffMemberById = async (user_id) => {
   const [rows] = await getPool().query(
     `SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active, u.created_at,
@@ -34,12 +37,14 @@ const findStaffMemberById = async (user_id) => {
   return rows[0] || null;
 };
 
+
 const setActiveStatus = async (user_id, is_active) => {
   await getPool().query(
     `UPDATE users SET is_active = ? WHERE user_id = ? AND role_id = 4`,
     [is_active, user_id]
   );
 };
+
 
 const assignStaffVenue = async (user_id, venue_id) => {
   const [result] = await getPool().query(
@@ -51,20 +56,23 @@ const assignStaffVenue = async (user_id, venue_id) => {
   return result;
 };
 
-const checkOrganizerVenue = async (organizer_id, venue_id) => {
+
+// Replaces checkOrganizerVenue — just confirms the venue exists and is active.
+// Staff are venue-scoped, not event-scoped, so no session linkage check needed.
+const findVenueById = async (venue_id) => {
   const [rows] = await getPool().query(
-    `SELECT 1 FROM event_sessions es
-     JOIN parent_events pe ON pe.event_id = es.event_id
-     WHERE pe.organizer_id = ? AND es.venue_id = ?
-     LIMIT 1`,
-    [organizer_id, venue_id]
+    `SELECT venue_id, venue_name, is_active FROM venues WHERE venue_id = ? LIMIT 1`,
+    [venue_id]
   );
-  return rows.length > 0;
+  return rows[0] || null;
 };
 
+
+// Organizers see staff at venues where they have scheduled sessions.
+// Uses user_venues (actual staff assignments), not session-based joins for the staff list.
 const findStaffByOrganizerVenues = async (organizer_id) => {
   const [rows] = await getPool().query(`
-    SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active,
+    SELECT u.user_id, u.full_name, u.email, u.phone, u.is_active, u.created_at,
            v.venue_name, uv.venue_id
     FROM users u
     LEFT JOIN user_venues uv ON uv.user_id = u.user_id
@@ -81,4 +89,13 @@ const findStaffByOrganizerVenues = async (organizer_id) => {
   return rows;
 };
 
-module.exports = { createStaffMember, findAllStaff, findStaffMemberById, setActiveStatus, assignStaffVenue, checkOrganizerVenue, findStaffByOrganizerVenues};
+
+module.exports = {
+  createStaffMember,
+  findAllStaff,
+  findStaffMemberById,
+  setActiveStatus,
+  assignStaffVenue,
+  findVenueById,             
+  findStaffByOrganizerVenues,
+};

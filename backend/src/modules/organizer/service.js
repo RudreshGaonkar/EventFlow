@@ -28,9 +28,51 @@ const getMyEvents = async (req, res) => {
 
 const createEvent = async (req, res) => {
   try {
-    let poster_url = null;
-    if (req.file) poster_url = await uploadImage(req.file.buffer, 'eventflow/posters');
-    const id = await insertEvent(req.user.user_id, { ...req.body, poster_url });
+    let poster_url   = null;
+    let brochure_url = null;
+
+    if (req.files?.poster?.[0])
+      poster_url = await uploadFile(
+        `data:image/jpeg;base64,${req.files.poster[0].buffer.toString('base64')}`,
+        'eventflow/posters'
+      ).then(r => r.secure_url);
+
+    if (req.files?.brochure?.[0])
+      brochure_url = await uploadFile(
+        `data:application/pdf;base64,${req.files.brochure[0].buffer.toString('base64')}`,
+        'eventflow/brochures'
+      ).then(r => r.secure_url);
+
+    const {
+      title,
+      description        = null,
+      event_type         = 'Movie',
+      rating             = null,
+      duration_mins      = null,
+      age_limit          = null,
+      language           = null,
+      genre              = null,
+      trailer_url        = null,
+      registration_mode  = 'booking',
+      event_scope        = 'national',
+      listing_days_ahead = 5,
+      registration_fee   = 0.00,
+      participation_type = 'solo',
+      max_participants   = null,
+      min_team_size      = null,
+      max_team_size      = null,
+    } = req.body;
+
+    const id = await insertEvent(req.user.user_id, {
+      title, description, event_type,
+      rating, duration_mins, age_limit, language, genre,
+      trailer_url,
+      registration_mode, event_scope, listing_days_ahead,
+      registration_fee, participation_type,
+      max_participants, min_team_size, max_team_size,
+      poster_url, brochure_url,
+    });
+
     return res.status(201).json({ success: true, message: 'Event created', data: { event_id: id } });
   } catch (err) {
     console.error('[Organizer] createEvent:', err.message);
@@ -38,10 +80,39 @@ const createEvent = async (req, res) => {
   }
 };
 
+
 const updateEvent = async (req, res) => {
   try {
-    let fields = { ...req.body };
-    if (req.file) fields.poster_url = await uploadImage(req.file.buffer, 'eventflow/posters');
+    const {
+      registration_mode  = 'booking',
+      event_scope        = 'national',
+      listing_days_ahead = 5,
+      registration_fee   = 0.00,
+      participation_type = 'solo',
+      ...rest
+    } = req.body;
+
+    let fields = {
+      ...rest,
+      registration_mode,
+      event_scope,
+      listing_days_ahead,
+      registration_fee,
+      participation_type,
+    };
+
+    if (req.files?.poster?.[0])
+      fields.poster_url = await uploadFile(
+        `data:image/jpeg;base64,${req.files.poster[0].buffer.toString('base64')}`,
+        'eventflow/posters'
+      ).then(r => r.secure_url);
+
+    if (req.files?.brochure?.[0])
+      fields.brochure_url = await uploadFile(
+        `data:application/pdf;base64,${req.files.brochure[0].buffer.toString('base64')}`,
+        'eventflow/brochures'
+      ).then(r => r.secure_url);
+
     await modifyEvent(req.params.event_id, req.user.user_id, fields);
     return res.status(200).json({ success: true, message: 'Event updated' });
   } catch (err) {
@@ -196,10 +267,6 @@ const removeCast = async (req, res) => {
   }
 };
 
-module.exports = {
-  getMyEvents, createEvent, updateEvent, deactivateEvent,
-  getSessions, createSession, updateStatus, updateMultiplier,
-  getVenues,
-  getPeople, createPerson, updatePerson,
-  getCast, addCast, removeCast,
+module.exports = {  getMyEvents, createEvent, updateEvent, deactivateEvent,  getSessions, createSession, updateStatus, updateMultiplier,
+  getVenues,  getPeople, createPerson, updatePerson,  getCast, addCast, removeCast,
 };

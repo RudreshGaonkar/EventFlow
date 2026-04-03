@@ -5,7 +5,7 @@ const allowRoles = (...allowedRoles) => {
         return res.status(401).json({ success: false, message: 'Not authenticated' });
       }
 
-      const userRoles = req.user.roles || [req.user.role_name];
+      const userRoles = req.user.roles?.length ? req.user.roles : [req.user.role_name];
 
       const hasRole = allowedRoles.some(role => userRoles.includes(role));
 

@@ -9,7 +9,7 @@ const {
   getAvailableSessions, getReviewScores
 } = require('./queries');
 
-// Parent Events
+// ── Parent Events ─────────────────────────────────────────────────────────────
 
 const getEvents = async (req, res) => {
   try {
@@ -27,7 +27,7 @@ const getEvent = async (req, res) => {
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }
-    const cast = await getEventPeople(req.params.event_id);
+    const cast   = await getEventPeople(req.params.event_id);
     const scores = await getReviewScores(req.params.event_id);
     return res.status(200).json({ success: true, data: { ...event, cast, scores } });
   } catch (err) {
@@ -38,25 +38,32 @@ const getEvent = async (req, res) => {
 
 const addEvent = async (req, res) => {
   try {
-    const { event_type, title, description, rating, duration_mins, age_limit, language, genre, trailer_url } = req.body;
+    const {
+      event_type, title, description,
+      rating, duration_mins, age_limit, language, genre, trailer_url,
+      // ── new registration fields ──
+      registration_mode, participation_type,
+      max_participants, min_team_size, max_team_size,
+      registration_fee, event_scope, listing_days_ahead,
+    } = req.body;
 
-    let poster_url = null;
+    let poster_url       = null;
     let poster_public_id = null;
 
     if (req.file) {
-      // const uploaded = await uploadFile(req.file.path, 'posters', null);
-      // poster_url = uploaded.secure_url;
-      // poster_public_id = uploaded.public_id;
-      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'posters', null);
-      poster_url = uploaded.secure_url;
+      poster_url       = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
 
     const event_id = await createEvent(
       req.user.user_id, event_type, title, description,
       rating, duration_mins, age_limit, language, genre,
-      poster_url, poster_public_id, trailer_url
+      poster_url, poster_public_id, trailer_url,
+      registration_mode, participation_type,
+      max_participants, min_team_size, max_team_size,
+      registration_fee, event_scope, listing_days_ahead,
     );
 
     return res.status(201).json({ success: true, message: 'Event created', data: { event_id } });
@@ -69,7 +76,14 @@ const addEvent = async (req, res) => {
 const editEvent = async (req, res) => {
   try {
     const { event_id } = req.params;
-    const { title, description, rating, duration_mins, age_limit, language, genre, trailer_url } = req.body;
+    const {
+      title, description,
+      rating, duration_mins, age_limit, language, genre, trailer_url,
+      // ── new registration fields ──
+      registration_mode, participation_type,
+      max_participants, min_team_size, max_team_size,
+      registration_fee, event_scope, listing_days_ahead,
+    } = req.body;
 
     const existing = await getEventById(event_id);
     if (!existing) {
@@ -79,18 +93,25 @@ const editEvent = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not your event' });
     }
 
-    let poster_url = existing.poster_url;
+    let poster_url       = existing.poster_url;
     let poster_public_id = existing.poster_public_id;
 
     if (req.file) {
       if (existing.poster_public_id) await deleteFile(existing.poster_public_id);
-      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'posters', null);
-      poster_url = uploaded.secure_url;
+      poster_url       = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
 
-    await updateEvent(event_id, title, description, rating, duration_mins, age_limit, language, genre, poster_url, poster_public_id, trailer_url);
+    await updateEvent(
+      event_id, title, description,
+      rating, duration_mins, age_limit, language, genre,
+      poster_url, poster_public_id, trailer_url,
+      registration_mode, participation_type,
+      max_participants, min_team_size, max_team_size,
+      registration_fee, event_scope, listing_days_ahead,
+    );
 
     return res.status(200).json({ success: true, message: 'Event updated' });
   } catch (err) {
@@ -117,7 +138,7 @@ const removeEvent = async (req, res) => {
   }
 };
 
-// People
+// ── People ────────────────────────────────────────────────────────────────────
 
 const getPeople = async (req, res) => {
   try {
@@ -133,13 +154,13 @@ const addPerson = async (req, res) => {
   try {
     const { real_name, bio } = req.body;
 
-    let photo_url = null;
+    let photo_url       = null;
     let photo_public_id = null;
 
     if (req.file) {
-      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'cast', null);
-      photo_url = uploaded.secure_url;
+      photo_url       = uploaded.secure_url;
       photo_public_id = uploaded.public_id;
     }
 
@@ -153,18 +174,17 @@ const addPerson = async (req, res) => {
 
 const editPerson = async (req, res) => {
   try {
-    const { person_id } = req.params;
-    const { real_name, bio } = req.body;
-
-    let photo_url = req.body.photo_url || null;
-    let photo_public_id = req.body.photo_public_id || null;
+    const { person_id }            = req.params;
+    const { real_name, bio }       = req.body;
+    let photo_url       = req.body.photo_url        || null;
+    let photo_public_id = req.body.photo_public_id  || null;
 
     if (req.file) {
-       if (photo_public_id) await deleteFile(photo_public_id);
-        const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-        const uploaded = await uploadFile(b64, 'cast', null);
-        photo_url = uploaded.secure_url;
-        photo_public_id = uploaded.public_id;
+      if (photo_public_id) await deleteFile(photo_public_id);
+      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const uploaded = await uploadFile(b64, 'cast', null);
+      photo_url       = uploaded.secure_url;
+      photo_public_id = uploaded.public_id;
     }
 
     await updatePerson(person_id, real_name, photo_url, photo_public_id, bio);
@@ -175,7 +195,7 @@ const editPerson = async (req, res) => {
   }
 };
 
-// Cast
+// ── Cast ──────────────────────────────────────────────────────────────────────
 
 const getCast = async (req, res) => {
   try {
@@ -221,7 +241,7 @@ const removeCast = async (req, res) => {
   }
 };
 
-// Sessions
+// ── Sessions ──────────────────────────────────────────────────────────────────
 
 const getSessions = async (req, res) => {
   try {
@@ -236,7 +256,11 @@ const getSessions = async (req, res) => {
 const addSession = async (req, res) => {
   try {
     const { event_id } = req.params;
-    const { venue_id, show_date, show_time, demand_multiplier } = req.body;
+    const {
+      venue_id, show_date, show_time, demand_multiplier,
+      // ── new registration session fields ──
+      requires_registration, session_max_participants,
+    } = req.body;
 
     const existing = await getEventById(event_id);
     if (!existing) {
@@ -246,7 +270,10 @@ const addSession = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not your event' });
     }
 
-    const session_id = await createSession(event_id, venue_id, show_date, show_time, demand_multiplier);
+    const session_id = await createSession(
+      event_id, venue_id, show_date, show_time, demand_multiplier,
+      requires_registration, session_max_participants,
+    );
     return res.status(201).json({ success: true, message: 'Session created', data: { session_id } });
   } catch (err) {
     console.error('[Events] addSession error:', err.message);
@@ -259,7 +286,7 @@ const addSession = async (req, res) => {
 
 const editSessionMultiplier = async (req, res) => {
   try {
-    const { session_id } = req.params;
+    const { session_id }       = req.params;
     const { demand_multiplier } = req.body;
     await updateSessionMultiplier(session_id, demand_multiplier);
     return res.status(200).json({ success: true, message: 'Demand multiplier updated' });
@@ -272,7 +299,7 @@ const editSessionMultiplier = async (req, res) => {
 const editSessionStatus = async (req, res) => {
   try {
     const { session_id } = req.params;
-    const { status } = req.body;
+    const { status }     = req.body;
     await updateSessionStatus(session_id, status);
     return res.status(200).json({ success: true, message: 'Session status updated' });
   } catch (err) {
@@ -281,7 +308,7 @@ const editSessionStatus = async (req, res) => {
   }
 };
 
-// Reviews
+// ── Reviews ───────────────────────────────────────────────────────────────────
 
 const getEventReviews = async (req, res) => {
   try {
@@ -308,7 +335,10 @@ const addReview = async (req, res) => {
     const { event_id, session_id, rating, review_text } = req.body;
 
     if ((event_id && session_id) || (!event_id && !session_id)) {
-      return res.status(400).json({ success: false, message: 'Review must target either an event or a session — not both or neither' });
+      return res.status(400).json({
+        success: false,
+        message: 'Review must target either an event or a session — not both or neither',
+      });
     }
 
     const id = await createReview(req.user.user_id, event_id, session_id, rating, review_text);
@@ -322,15 +352,16 @@ const addReview = async (req, res) => {
   }
 };
 
-// Browse — ✅ FIXED: fetches home_state_id from DB instead of JWT
-
+// ── Browse (legacy — kept for backward compat) ────────────────────────────────
+// ⚠️  New browse logic lives in browse/service.js — this can be removed
+//     once you confirm browse routes are fully migrated.
 const browseSessions = async (req, res) => {
   try {
     let state_id = req.query.state_id;
 
     if (!state_id) {
       const user = await findUserById(req.user.user_id);
-      state_id = user?.home_state_id;
+      state_id   = user?.home_state_id;
     }
 
     if (!state_id) {
@@ -351,5 +382,5 @@ module.exports = {
   getCast, addCast, removeCast,
   getSessions, addSession, editSessionMultiplier, editSessionStatus,
   getEventReviews, getSessionReviews, addReview,
-  browseSessions
+  browseSessions,
 };

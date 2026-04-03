@@ -7,6 +7,7 @@ import AdminTable from '../../../components/common/AdminTable';
 import AdminModal from '../../../components/common/AdminModal';
 import AdminField from '../../../components/common/AdminField';
 
+
 const STATUS_COLORS = {
   Scheduled: 'bg-blue-500/15 text-blue-400',
   Ongoing: 'bg-emerald-500/15 text-emerald-400',
@@ -16,18 +17,30 @@ const STATUS_COLORS = {
 
 const STATUSES = ['Scheduled', 'Ongoing', 'Completed', 'Cancelled'];
 
-const BLANK = { venue_id: '', show_date: '', show_time: '', demand_multiplier: 1.0 };
+const BLANK = {
+  venue_id: '',
+  show_date: '',
+  show_time: '',
+  demand_multiplier: 1.0,
+  requires_registration: false,      // ← new
+  session_max_participants: '',      // ← new
+};
+
 
 export default function OrganizerSessionsTab() {
-  const [events, setEvents] = useState([]);
-  const [venues, setVenues] = useState([]);
+  const [events, setEvents]     = useState([]);
+  const [venues, setVenues]     = useState([]);
   const [sessions, setSessions] = useState([]);
   const [selEvent, setSelEvent] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState(BLANK);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [modal, setModal]       = useState(false);
+  const [form, setForm]         = useState(BLANK);
+  const [saving, setSaving]     = useState(false);
   const { showToast } = useToast();
+
+  // ── derive selected event object for conditional fields ──────────────────
+  const selectedEvent = events.find(e => String(e.event_id) === String(selEvent));
+  const isNonBooking  = selectedEvent && selectedEvent.registration_mode !== 'booking';
 
   useEffect(() => {
     Promise.all([getMyEvents(), getVenues()])
@@ -124,9 +137,7 @@ export default function OrganizerSessionsTab() {
             <input
               type="number"
               defaultValue={s.demand_multiplier}
-              step="0.1"
-              min="0.1"
-              max="10"
+              step="0.1" min="0.1" max="10"
               onBlur={e => handleMultiplier(s.session_id, e.target.value)}
               className="w-20 px-2 py-1 bg-surface-container-highest text-white rounded-lg text-xs outline-none"
             />,
@@ -148,20 +159,67 @@ export default function OrganizerSessionsTab() {
         onSave={handleSave}
         saving={saving}
       >
+        {/* ── Venue ── */}
         <div className="space-y-1">
-          <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">Venue *</label>
+          <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">
+            Venue *
+          </label>
           <select
             value={form.venue_id}
             onChange={set('venue_id')}
             className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
           >
             <option value="">Select Venue</option>
-            {venues.map(v => <option key={v.venue_id} value={v.venue_id}>{v.venue_name} — {v.city_name}</option>)}
+            {venues.map(v => (
+              <option key={v.venue_id} value={v.venue_id}>
+                {v.venue_name} — {v.city_name}
+              </option>
+            ))}
           </select>
         </div>
-        <AdminField label="Date *" type="date" value={form.show_date} onChange={set('show_date')} />
-        <AdminField label="Time *" type="time" value={form.show_time} onChange={set('show_time')} />
-        <AdminField label="Demand Multiplier" type="number" value={form.demand_multiplier} onChange={set('demand_multiplier')} placeholder="e.g. 1.5" />
+
+        <AdminField label="Date *"             type="date"   value={form.show_date}         onChange={set('show_date')} />
+        <AdminField label="Time *"             type="time"   value={form.show_time}         onChange={set('show_time')} />
+        <AdminField label="Demand Multiplier"  type="number" value={form.demand_multiplier} onChange={set('demand_multiplier')} placeholder="e.g. 1.5" />
+
+        {/* ── Registration (non-booking events only) ───────────────────────── */}
+        {isNonBooking && (
+          <>
+            <div className="flex items-center justify-between px-1 py-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">
+                Requires Registration
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm(f => ({
+                    ...f,
+                    requires_registration: !f.requires_registration,
+                    session_max_participants: '',   // reset when toggled off
+                  }))
+                }
+                className={`relative w-11 h-6 rounded-full transition-colors duration-200
+                  ${form.requires_registration ? 'bg-primary' : 'bg-surface-container-highest'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow
+                    transition-transform duration-200
+                    ${form.requires_registration ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
+
+            {form.requires_registration && (
+              <AdminField
+                label="Max Participants (this session)"
+                type="number"
+                value={form.session_max_participants}
+                onChange={set('session_max_participants')}
+                placeholder="e.g. 50  — leave blank for unlimited"
+              />
+            )}
+          </>
+        )}
       </AdminModal>
     </>
   );
