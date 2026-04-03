@@ -1,4 +1,4 @@
-const pool = require('../../config/db');
+const { getPool } = require('../../config/db');
 
 // ── Register (calls stored procedure) ────────────────────────────────────────
 const callRegisterProc = async ({
@@ -6,33 +6,36 @@ const callRegisterProc = async ({
   participant_type, college_name,
   team_name, team_size,
 }) => {
-  const [rows] = await pool.query(
-    `CALL register_for_event(?, ?, ?, ?, ?, ?, ?, @reg_id, @code, @msg)`,
+  const pool = getPool();
+
+  await pool.execute(
+    'CALL register_for_event(?, ?, ?, ?, ?, ?, ?, @reg_id, @code, @msg)',
     [
       user_id,
       event_id,
-      session_id ?? null,
+      session_id       ?? null,
       participant_type,
-      college_name ?? null,
-      team_name ?? null,
-      team_size ?? null,
+      college_name     ?? null,
+      team_name        ?? null,
+      team_size        ?? null,
     ]
   );
 
-  const [[out]] = await pool.query(
-    `SELECT @reg_id AS registration_id, @code AS result_code, @msg AS result_msg`
+  const [[out]] = await pool.execute(
+    'SELECT @reg_id AS registration_id, @code AS result_code, @msg AS result_msg'
   );
   return out;
 };
 
 // ── Confirm paid registration after Stripe webhook ───────────────────────────
 const confirmPaidRegistration = async (stripe_session_id, amount_paid) => {
-  const [result] = await pool.query(
+  const pool = getPool();
+  const [result] = await pool.execute(
     `UPDATE event_registrations
-     SET status = 'Confirmed',
-         amount_paid = ?,
-         stripe_session_id = ?
-     WHERE stripe_session_id = ? AND status = 'Pending'`,
+     SET    status            = 'Confirmed',
+            amount_paid       = ?,
+            stripe_session_id = ?
+     WHERE  stripe_session_id = ? AND status = 'Pending'`,
     [amount_paid, stripe_session_id, stripe_session_id]
   );
   return result.affectedRows;
@@ -40,17 +43,19 @@ const confirmPaidRegistration = async (stripe_session_id, amount_paid) => {
 
 // ── Save stripe session id after checkout created ────────────────────────────
 const saveStripeSession = async (registration_id, stripe_session_id) => {
-  await pool.query(
+  const pool = getPool();
+  await pool.execute(
     `UPDATE event_registrations
-     SET stripe_session_id = ?
-     WHERE registration_id = ?`,
+     SET    stripe_session_id = ?
+     WHERE  registration_id   = ?`,
     [stripe_session_id, registration_id]
   );
 };
 
 // ── Get single registration ───────────────────────────────────────────────────
 const getRegistrationById = async (registration_id) => {
-  const [[row]] = await pool.query(
+  const pool = getPool();
+  const [[row]] = await pool.execute(
     `SELECT
        er.registration_id,
        er.event_id,
@@ -62,7 +67,7 @@ const getRegistrationById = async (registration_id) => {
        er.team_size,
        er.amount_paid,
        er.registered_at,
-       pe.title          AS event_title,
+       pe.title             AS event_title,
        pe.registration_mode,
        pe.participation_type,
        pe.registration_fee,
@@ -70,12 +75,12 @@ const getRegistrationById = async (registration_id) => {
        es.show_time,
        v.venue_name,
        c.city_name
-     FROM event_registrations er
-     JOIN parent_events pe  ON pe.event_id  = er.event_id
-     LEFT JOIN event_sessions es ON es.session_id = er.session_id
-     LEFT JOIN venues v         ON v.venue_id     = es.venue_id
-     LEFT JOIN cities c         ON c.city_id      = v.city_id
-     WHERE er.registration_id = ?`,
+     FROM   event_registrations er
+     JOIN   parent_events       pe ON pe.event_id   = er.event_id
+     LEFT JOIN event_sessions   es ON es.session_id = er.session_id
+     LEFT JOIN venues            v  ON v.venue_id   = es.venue_id
+     LEFT JOIN cities            c  ON c.city_id    = v.city_id
+     WHERE  er.registration_id = ?`,
     [registration_id]
   );
   return row;
@@ -83,7 +88,8 @@ const getRegistrationById = async (registration_id) => {
 
 // ── Get all registrations for a user ─────────────────────────────────────────
 const getRegistrationsByUser = async (user_id) => {
-  const [rows] = await pool.query(
+  const pool = getPool();
+  const [rows] = await pool.execute(
     `SELECT
        er.registration_id,
        er.event_id,
@@ -94,7 +100,7 @@ const getRegistrationsByUser = async (user_id) => {
        er.team_size,
        er.amount_paid,
        er.registered_at,
-       pe.title            AS event_title,
+       pe.title             AS event_title,
        pe.poster_url,
        pe.registration_mode,
        pe.event_type,
@@ -102,21 +108,22 @@ const getRegistrationsByUser = async (user_id) => {
        es.show_time,
        v.venue_name,
        c.city_name
-     FROM event_registrations er
-     JOIN parent_events pe       ON pe.event_id   = er.event_id
-     LEFT JOIN event_sessions es ON es.session_id = er.session_id
-     LEFT JOIN venues v          ON v.venue_id    = es.venue_id
-     LEFT JOIN cities c          ON c.city_id     = v.city_id
-     WHERE er.user_id = ?
-     ORDER BY er.registered_at DESC`,
+     FROM   event_registrations er
+     JOIN   parent_events       pe ON pe.event_id   = er.event_id
+     LEFT JOIN event_sessions   es ON es.session_id = er.session_id
+     LEFT JOIN venues            v  ON v.venue_id   = es.venue_id
+     LEFT JOIN cities            c  ON c.city_id    = v.city_id
+     WHERE  er.user_id = ?
+     ORDER  BY er.registered_at DESC`,
     [user_id]
   );
   return rows;
 };
 
-// ── Get all registrations for an event (organizer view) ───────────────────────
+// ── Get all registrations for an event (organizer view) ──────────────────────
 const getRegistrationsByEvent = async (event_id) => {
-  const [rows] = await pool.query(
+  const pool = getPool();
+  const [rows] = await pool.execute(
     `SELECT
        er.registration_id,
        er.user_id,
@@ -133,11 +140,11 @@ const getRegistrationsByEvent = async (event_id) => {
        er.registered_at,
        es.show_date,
        es.show_time
-     FROM event_registrations er
-     JOIN users u               ON u.user_id     = er.user_id
-     LEFT JOIN event_sessions es ON es.session_id = er.session_id
-     WHERE er.event_id = ?
-     ORDER BY er.registered_at DESC`,
+     FROM   event_registrations er
+     JOIN   users                u  ON u.user_id     = er.user_id
+     LEFT JOIN event_sessions   es ON es.session_id = er.session_id
+     WHERE  er.event_id = ?
+     ORDER  BY er.registered_at DESC`,
     [event_id]
   );
   return rows;
@@ -145,7 +152,8 @@ const getRegistrationsByEvent = async (event_id) => {
 
 // ── Get event config (mode, caps, team sizes) ─────────────────────────────────
 const getEventRegistrationConfig = async (event_id) => {
-  const [[row]] = await pool.query(
+  const pool = getPool();
+  const [[row]] = await pool.execute(
     `SELECT
        event_id,
        title,
@@ -155,8 +163,8 @@ const getEventRegistrationConfig = async (event_id) => {
        min_team_size,
        max_team_size,
        registration_fee
-     FROM parent_events
-     WHERE event_id = ? AND is_active = TRUE`,
+     FROM   parent_events
+     WHERE  event_id = ? AND is_active = TRUE`,
     [event_id]
   );
   return row;
@@ -164,10 +172,11 @@ const getEventRegistrationConfig = async (event_id) => {
 
 // ── Cancel a registration ─────────────────────────────────────────────────────
 const cancelRegistration = async (registration_id, user_id) => {
-  const [result] = await pool.query(
+  const pool = getPool();
+  const [result] = await pool.execute(
     `UPDATE event_registrations
-     SET status = 'Cancelled'
-     WHERE registration_id = ? AND user_id = ? AND status != 'Cancelled'`,
+     SET    status = 'Cancelled'
+     WHERE  registration_id = ? AND user_id = ? AND status != 'Cancelled'`,
     [registration_id, user_id]
   );
   return result.affectedRows;

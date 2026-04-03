@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Clock, Globe, ChevronLeft, Play,
-  MapPin, Calendar, AlertCircle, Users, Ticket,FileText
+  MapPin, Calendar, AlertCircle, Users, Ticket, FileText
 } from 'lucide-react';
 import { getEventDetail, getEventSessions } from '../../services/browse';
 
@@ -221,12 +221,14 @@ export default function EventPage() {
   const [event,      setEvent]      = useState(null);
   const [sessions,   setSessions]   = useState([]);
   const [loading,    setLoading]    = useState(true);
+  const [loadError,  setLoadError]  = useState(false); // ✅ NEW: replaces catch navigate('/')
   const [cityFilter, setCityFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      setLoadError(false);
       try {
         const [eRes, sRes] = await Promise.all([
           getEventDetail(event_id),
@@ -234,8 +236,11 @@ export default function EventPage() {
         ]);
         setEvent(eRes.data.data);
         setSessions(sRes.data.data || []);
-      } catch { navigate('/'); }
-      finally  { setLoading(false); }
+      } catch {
+        setLoadError(true); // ✅ FIXED: show error in-page, never redirect away
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, [event_id]);
@@ -245,6 +250,22 @@ export default function EventPage() {
       <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
+
+  // ✅ FIXED: error shown in-page instead of silent redirect
+  if (loadError) return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
+      <AlertCircle size={36} className="text-error opacity-60" />
+      <p className="text-on-surface font-semibold">Could not load event</p>
+      <p className="text-sm text-on-surface-variant">Check your connection and try again</p>
+      <button
+        onClick={() => navigate(-1)}
+        className="mt-2 text-sm text-primary hover:underline flex items-center gap-1"
+      >
+        <ChevronLeft size={14} /> Go Back
+      </button>
+    </div>
+  );
+
   if (!event) return null;
 
   const isBookingEvent = !event.registration_mode || event.registration_mode === 'booking';
@@ -274,7 +295,6 @@ export default function EventPage() {
     .filter(p => p.role_type === 'Cast')
     .filter((p, i, arr) => arr.findIndex(x => x.person_id === p.person_id) === i);
 
-  // /events/ 
   const handleSelect = (session) =>
     navigate(`/session/${session.session_id}/seats`, { state: { event, session } });
 
@@ -304,7 +324,6 @@ export default function EventPage() {
             <ChevronLeft size={16} /> Back
           </button>
 
-          {/* ✅ Fix: scope badge moved INSIDE this flex container */}
           <div className="flex gap-6 sm:gap-8 items-start">
 
             {/* Poster */}
@@ -337,7 +356,6 @@ export default function EventPage() {
                     {event.registration_mode === 'paid_registration' ? 'Paid Registration' : 'Free Registration'}
                   </span>
                 )}
-                {/* ✅ Fix: scope badge now inside flex, not floating outside */}
                 {event.event_scope === 'national' ? (
                   <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full
                     bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
@@ -559,7 +577,6 @@ export default function EventPage() {
                       </div>
                     )
                   ) : (
-                    // Registration: flat list of sub-sessions
                     <div className="space-y-3">
                       {sessions.map(s => (
                         <SubSessionCard

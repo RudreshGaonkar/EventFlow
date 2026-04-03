@@ -3,28 +3,39 @@ import { useAuth } from './context/AuthContext';
 import Navbar from './components/common/Navbar';
 import RoleGuard from './components/common/RoleGuard';
 import Skeleton from './components/common/LoadingSkeleton';
-import { ToastProvider } from './components/common/Toast'; 
+import { ToastProvider } from './components/common/Toast';
 import Footer from './components/common/Footer';
+
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 
-// Main (placeholders for now)
-import BrowsePage    from './pages/browse/BrowsePage';
-import EventPage     from './pages/events/EventPage';
-import SeatsPage     from './pages/seats/SeatsPage';
-import CheckoutPage  from './pages/booking/CheckoutPage';
-import ConfirmPage   from './pages/booking/ConfirmPage';
+// Browse & Events
+import BrowsePage        from './pages/browse/BrowsePage';
+import EventPage         from './pages/events/EventPage';
+import RegistrationPage  from './pages/events/RegisterPage';
+
+// Seats
+import SeatsPage from './pages/seats/SeatsPage';
+
+// Booking
+import CheckoutPage   from './pages/booking/CheckoutPage';
+import ConfirmPage    from './pages/booking/ConfirmPage';
+import CancelPage     from './pages/booking/CancelPage';
 import MyBookingsPage from './pages/booking/MyBookingsPage';
-import TicketsPage   from './pages/tickets/TicketsPage';
+
+// Tickets
+import TicketsPage from './pages/tickets/TicketsPage';
+
+// Registration
 import RegistrationConfirmPage from './pages/registration/RegistrationConfirmPage';
 import RegistrationCancelPage  from './pages/registration/RegistrationCancelPage';
 import MyRegistrationsPage     from './pages/registration/MyRegistrationsPage';
 
 // Role-specific
-import AdminPage    from './pages/admin/AdminPage';
-import StaffPage    from './pages/staff/StaffPage';
-import ScannerPage  from './pages/staff/ScannerPage';
-import OrganizerPage from './pages/organizer/OrganizerPage'; 
+import AdminPage      from './pages/admin/AdminPage';
+import StaffPage      from './pages/staff/StaffPage';
+import ScannerPage    from './pages/staff/ScannerPage';
+import OrganizerPage  from './pages/organizer/OrganizerPage';
 import VenueOwnerPage from './pages/venue-owner/VenueOwnerPage';
 
 // Pages that hide the Navbar
@@ -32,14 +43,13 @@ const NO_NAVBAR = ['/login'];
 
 function RoleRedirect() {
   const { user } = useAuth();
-
   const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
   const hasRole = (role) => userRoles.includes(role);
 
-  if (hasRole('System Admin'))return <Navigate to="/admin"replace />;
-  if (hasRole('Venue Staff'))return <Navigate to="/staff"replace />;
-  if (hasRole('Event Organizer')) return <Navigate to="/organizer"   replace />;
-  if (hasRole('Venue Owner'))return <Navigate to="/venue-owner" replace />;
+  if (hasRole('System Admin'))    return <Navigate to="/admin"        replace />;
+  if (hasRole('Venue Staff'))     return <Navigate to="/staff"        replace />;
+  if (hasRole('Event Organizer')) return <Navigate to="/organizer"    replace />;
+  if (hasRole('Venue Owner'))     return <Navigate to="/venue-owner"  replace />;
 
   return <BrowsePage />;
 }
@@ -55,13 +65,8 @@ const PrivateRoute = ({ children }) => {
       </div>
     </div>
   );
-
-  
-
   return user ? children : <Navigate to="/login" replace />;
 };
-
-
 
 export default function App() {
   const location = useLocation();
@@ -72,23 +77,55 @@ export default function App() {
       {showNavbar && <Navbar />}
       <ToastProvider>
         <Routes>
-          {/* Public */}
+          {/* ── Public ── */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* Protected — any logged in user */}
-          {/* <Route path="/"element={<PrivateRoute><BrowsePage /></PrivateRoute>} /> */}
-          <Route path="/" element={ <PrivateRoute> <RoleRedirect /> </PrivateRoute>}/>
-          <Route path="/events/:event_id"element={<PrivateRoute><EventPage /></PrivateRoute>} />
-          <Route path="/session/:session_id/seats" element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
-          <Route path="/checkout"element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
-          <Route path="/confirm"element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
-          <Route path="/bookings"element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
-          <Route path="/tickets/:bookingId"  element={<PrivateRoute><TicketsPage /></PrivateRoute>} />
-          <Route path="/registration/confirm"element={<PrivateRoute><RegistrationConfirmPage /></PrivateRoute>} />
-          <Route path="/registration/cancel"element={<PrivateRoute><RegistrationCancelPage /></PrivateRoute>} />
-          <Route path="/my-registrations"element={<PrivateRoute><MyRegistrationsPage /></PrivateRoute>} />
+          {/* ── Home — role-based redirect ── */}
+          <Route path="/" element={<PrivateRoute><RoleRedirect /></PrivateRoute>} />
 
-          {/* Staff only */}
+          {/* ── Events ── */}
+          <Route path="/events/:event_id"
+            element={<PrivateRoute><EventPage /></PrivateRoute>} />
+
+          {/* ── Registration ── */}
+          {/* FIX 1: was missing — EventPage navigates here for register */}
+          <Route path="/events/:event_id/register"
+            element={<PrivateRoute><RegistrationPage /></PrivateRoute>} />
+
+          {/* ── Seats ── */}
+          <Route path="/session/:session_id/seats"
+            element={<PrivateRoute><SeatsPage /></PrivateRoute>} />
+
+          {/* ── Booking ── */}
+          <Route path="/checkout"
+            element={<PrivateRoute><CheckoutPage /></PrivateRoute>} />
+
+          {/* FIX 2: was "/confirm" — Stripe redirects to /booking/confirm */}
+          <Route path="/booking/confirm"
+            element={<PrivateRoute><ConfirmPage /></PrivateRoute>} />
+
+          {/* FIX 3: was missing — Stripe redirects to /booking/cancel */}
+          <Route path="/booking/cancel"
+            element={<PrivateRoute><CancelPage /></PrivateRoute>} />
+
+          {/* FIX 4: was "/bookings" — ConfirmPage & Navbar link to /my-bookings */}
+          <Route path="/my-bookings"
+            element={<PrivateRoute><MyBookingsPage /></PrivateRoute>} />
+
+          {/* ── Tickets ── */}
+          {/* FIX 5: was "/tickets/:bookingId" — TicketsPage shows all tickets */}
+          <Route path="/my-tickets"
+            element={<PrivateRoute><TicketsPage /></PrivateRoute>} />
+
+          {/* ── Registration flows ── */}
+          <Route path="/registration/confirm"
+            element={<PrivateRoute><RegistrationConfirmPage /></PrivateRoute>} />
+          <Route path="/registration/cancel"
+            element={<PrivateRoute><RegistrationCancelPage /></PrivateRoute>} />
+          <Route path="/my-registrations"
+            element={<PrivateRoute><MyRegistrationsPage /></PrivateRoute>} />
+
+          {/* ── Staff ── */}
           <Route path="/staff" element={
             <RoleGuard roles={['Venue Staff', 'System Admin']}><StaffPage /></RoleGuard>
           } />
@@ -96,21 +133,22 @@ export default function App() {
             <RoleGuard roles={['Venue Staff', 'System Admin']}><ScannerPage /></RoleGuard>
           } />
 
-          {/* Admin only */}
+          {/* ── Admin ── */}
           <Route path="/admin/*" element={
             <RoleGuard roles={['System Admin']}><AdminPage /></RoleGuard>
           } />
 
-          {/* ✅ Organizer only */}
+          {/* ── Organizer ── */}
           <Route path="/organizer" element={
             <RoleGuard roles={['Event Organizer']}><OrganizerPage /></RoleGuard>
           } />
 
+          {/* ── Venue Owner ── */}
           <Route path="/venue-owner" element={
             <RoleGuard roles={['Venue Owner']}><VenueOwnerPage /></RoleGuard>
           } />
 
-          {/* Fallback */}
+          {/* ── Fallback ── */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ToastProvider>

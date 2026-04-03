@@ -1,24 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Users, User, GraduationCap, Briefcase,
-  ChevronRight, AlertCircle, Info
+  Users, GraduationCap, Briefcase,
+  ChevronRight, AlertCircle, Info,
+  Calendar, MapPin, Sparkles, Lock
 } from 'lucide-react';
-import { getEventDetail, getEventSessions } from '../../services/events';
+import { getEventDetail, getEventSessions } from '../../services/browse';
 import { registerForEvent } from '../../services/registration';
 
 export default function RegistrationPage() {
-  const { event_id }   = useParams();
-  const [qp]           = useSearchParams();
-  const navigate       = useNavigate();
+  const { event_id } = useParams();
+  const [qp] = useSearchParams();
+  const navigate = useNavigate();
 
-  const [event,     setEvent]     = useState(null);
-  const [sessions,  setSessions]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [submitting,setSubmitting]= useState(false);
-  const [error,     setError]     = useState('');
+  const [event,      setEvent]      = useState(null);
+  const [sessions,   setSessions]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error,      setError]      = useState('');
 
-  // Form state
   const [form, setForm] = useState({
     session_id:       qp.get('session_id') || '',
     participant_type: 'student',
@@ -40,12 +40,18 @@ export default function RegistrationPage() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const isTeam   = event?.participation_type === 'team';
-  const isFree   = event?.registration_mode  === 'free_registration';
-  const isPaid   = event?.registration_mode  === 'paid_registration';
-  const fee      = Number(event?.registration_fee || 0);
-  const minTeam  = Number(event?.min_team_size || 2);
-  const maxTeam  = Number(event?.max_team_size || 10);
+  const isTeam  = event?.participation_type === 'team';
+  const isFree  = event?.registration_mode  === 'free_registration';
+  const isPaid  = event?.registration_mode  === 'paid_registration';
+  const fee     = Number(event?.registration_fee || 0);
+  const minTeam = Number(event?.min_team_size || 2);
+  const maxTeam = Number(event?.max_team_size || 10);
+
+  const hasPreselectedSession = Boolean(qp.get('session_id'));
+  const showSessionPicker =
+    !hasPreselectedSession &&
+    sessions.length > 1 &&
+    sessions.some(s => s.requires_registration);
 
   const validate = () => {
     if (!form.participant_type) return 'Select participant type';
@@ -57,8 +63,7 @@ export default function RegistrationPage() {
       if (!ts || ts < minTeam || ts > maxTeam)
         return `Team size must be between ${minTeam} and ${maxTeam}`;
     }
-    if (sessions.length > 0 && !form.session_id)
-      return 'Please select a session';
+    if (showSessionPicker && !form.session_id) return 'Please select a session';
     return null;
   };
 
@@ -66,24 +71,20 @@ export default function RegistrationPage() {
     e.preventDefault();
     const err = validate();
     if (err) return setError(err);
-    setError(''); setSubmitting(true);
-
+    setError('');
+    setSubmitting(true);
     try {
       const payload = {
         participant_type: form.participant_type,
-        college_name:     form.participant_type === 'student' ? form.college_name : undefined,
-        team_name:        isTeam ? form.team_name  : undefined,
-        team_size:        isTeam ? Number(form.team_size) : undefined,
-        session_id:       form.session_id ? Number(form.session_id) : undefined,
+        college_name: form.participant_type === 'student' ? form.college_name : undefined,
+        team_name:    isTeam ? form.team_name              : undefined,
+        team_size:    isTeam ? Number(form.team_size)      : undefined,
+        session_id:   form.session_id ? Number(form.session_id) : undefined,
       };
-
       const { data } = await registerForEvent(event_id, payload);
-
       if (data.data?.checkout_url) {
-        // Paid — redirect to Stripe
         window.location.href = data.data.checkout_url;
       } else {
-        // Free — go to confirm
         navigate(`/registration/confirm?registration_id=${data.data.registration.registration_id}`);
       }
     } catch (err) {
@@ -92,183 +93,253 @@ export default function RegistrationPage() {
     }
   };
 
-  if (loading) return <p className="p-8 text-center text-on-surface-variant">Loading event…</p>;
-  if (!event)  return <p className="p-8 text-center text-error">Event not found</p>;
+  if (loading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <p className="text-sm text-on-surface-variant animate-pulse">Loading event…</p>
+      </div>
+    </div>
+  );
+
+  if (!event) return (
+    <p className="p-8 text-center text-error">Event not found</p>
+  );
+
+  const preselectedSession = hasPreselectedSession
+    ? sessions.find(x => String(x.session_id) === String(qp.get('session_id')))
+    : null;
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4">
-      <div className="max-w-xl mx-auto">
+    <div className="min-h-screen bg-background py-12 px-4">
+      <div className="max-w-lg mx-auto space-y-4">
 
-        {/* Event banner */}
-        <div className="flex gap-4 items-center bg-surface-container rounded-2xl p-4 mb-6 border border-outline-variant">
-          {event.poster_url
-            ? <img src={event.poster_url} alt={event.title}
-                className="w-16 h-20 rounded-xl object-cover shrink-0" />
-            : <div className="w-16 h-20 rounded-xl bg-surface-container-highest flex items-center justify-center text-2xl shrink-0">🎯</div>
-          }
-          <div className="min-w-0">
-            <p className="text-xs text-primary font-bold uppercase tracking-wide mb-1">{event.event_type}</p>
-            <h1 className="text-lg font-extrabold text-on-surface leading-tight truncate">{event.title}</h1>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {isFree && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-success/20 text-success font-semibold border border-success/30">
-                  Free Registration
-                </span>
-              )}
-              {isPaid && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/20 text-secondary font-semibold border border-secondary/30">
-                  ₹{fee.toLocaleString('en-IN')} Registration Fee
-                </span>
-              )}
-              {isTeam && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold border border-primary/30">
-                  👥 Team ({minTeam}–{maxTeam} members)
-                </span>
-              )}
+        <div className="relative overflow-hidden rounded-2xl border border-outline-variant bg-surface-container shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+
+          <div className="flex gap-4 p-5">
+            {event.poster_url ? (
+              <img
+                src={event.poster_url}
+                alt={event.title}
+                className="w-16 h-22 rounded-xl object-cover shrink-0 shadow-md"
+              />
+            ) : (
+              <div className="w-16 h-22 rounded-xl bg-surface-container-highest flex items-center justify-center text-2xl shrink-0">
+                🎯
+              </div>
+            )}
+
+            <div className="min-w-0 flex flex-col justify-center gap-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                {event.event_type}
+              </p>
+              <h1 className="text-base font-extrabold text-on-surface leading-snug line-clamp-2">
+                {event.title}
+              </h1>
+
+              <div className="flex flex-wrap gap-1.5 mt-0.5">
+                {isFree && (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-success/15 text-success font-semibold border border-success/25">
+                    <Sparkles size={9} /> Free
+                  </span>
+                )}
+                {isPaid && (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold border border-primary/20">
+                    ₹{fee.toLocaleString('en-IN')}
+                  </span>
+                )}
+                {isTeam && (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-secondary/10 text-secondary font-semibold border border-secondary/20">
+                    <Users size={9} /> Team · {minTeam}–{maxTeam}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+
+          {preselectedSession && (
+            <div className="mx-5 mb-4 flex items-center gap-2.5 rounded-xl bg-primary/8 border border-primary/15 px-3.5 py-2.5">
+              <div className="flex items-center gap-1.5 text-primary">
+                <Calendar size={12} />
+                <span className="text-xs font-semibold">
+                  {new Date(preselectedSession.show_date).toDateString()}
+                </span>
+              </div>
+              <span className="text-on-surface-variant text-xs opacity-40">·</span>
+              <div className="flex items-center gap-1.5 text-on-surface-variant">
+                <MapPin size={11} />
+                <span className="text-xs">{preselectedSession.venue_name}</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}
-          className="bg-surface-container rounded-2xl border border-outline-variant p-6 space-y-5">
-
-          <h2 className="text-base font-bold text-on-surface">Registration Details</h2>
-
-          {error && (
-            <div className="flex items-start gap-2 bg-error/10 border border-error/30 rounded-xl px-4 py-3">
-              <AlertCircle size={15} className="text-error shrink-0 mt-0.5" />
-              <p className="text-error text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Session picker — only if multiple sessions exist */}
-          {sessions.length > 1 && (
-            <div>
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-                Select Session
-              </label>
-              <select
-                value={form.session_id}
-                onChange={e => set('session_id', e.target.value)}
-                required
-                className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl
-                  px-4 py-3 border border-outline-variant focus:border-primary/50 outline-none"
-              >
-                <option value="">Choose a session…</option>
-                {sessions.map(s => (
-                  <option key={s.session_id} value={s.session_id}>
-                    {new Date(s.show_date).toDateString()} {s.show_time} — {s.venue_name}, {s.city_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Participant type */}
-          <div>
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-              I am a…
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'student',     label: 'Student',     icon: GraduationCap, desc: 'Currently enrolled' },
-                { value: 'independent', label: 'Independent', icon: Briefcase,     desc: 'Professional / other' },
-              ].map(({ value, label, icon: Icon, desc }) => (
-                <button key={value} type="button"
-                  onClick={() => set('participant_type', value)}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all
-                    ${form.participant_type === value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-outline-variant bg-surface-container-highest text-on-surface-variant hover:border-primary/40'
-                    }`}>
-                  <Icon size={20} />
-                  <span className="text-sm font-semibold">{label}</span>
-                  <span className="text-[11px] opacity-70">{desc}</span>
-                </button>
-              ))}
-            </div>
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl border border-outline-variant bg-surface-container shadow-sm overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-outline-variant/50">
+            <h2 className="text-sm font-bold text-on-surface">Registration Details</h2>
+            <p className="text-xs text-on-surface-variant mt-0.5">Fill in your details to register</p>
           </div>
 
-          {/* College name — only for students */}
-          {form.participant_type === 'student' && (
-            <div>
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-                College / University *
-              </label>
-              <input
-                value={form.college_name}
-                onChange={e => set('college_name', e.target.value)}
-                placeholder="e.g. Goa University"
-                className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl
-                  px-4 py-3 border border-outline-variant focus:border-primary/50 outline-none
-                  placeholder-on-surface-variant transition-all"
-              />
-            </div>
-          )}
+          <div className="p-6 space-y-5">
 
-          {/* Team fields */}
-          {isTeam && (
-            <>
-              <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-                  Team Name *
+            {error && (
+              <div className="flex items-start gap-2.5 bg-error/8 border border-error/20 rounded-xl px-4 py-3">
+                <AlertCircle size={14} className="text-error shrink-0 mt-0.5" />
+                <p className="text-error text-xs font-medium leading-relaxed">{error}</p>
+              </div>
+            )}
+
+            {showSessionPicker && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                  Session
                 </label>
                 <div className="relative">
-                  <Users size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
-                  <input
-                    value={form.team_name}
-                    onChange={e => set('team_name', e.target.value)}
-                    placeholder="e.g. Team Nexus"
-                    className="w-full pl-9 pr-4 py-3 bg-surface-container-highest text-on-surface text-sm
-                      rounded-xl border border-outline-variant focus:border-primary/50 outline-none
-                      placeholder-on-surface-variant transition-all"
-                  />
+                  <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                  <select
+                    value={form.session_id}
+                    onChange={e => set('session_id', e.target.value)}
+                    required
+                    className="w-full pl-9 pr-4 py-3 bg-surface-container-highest text-on-surface text-sm rounded-xl border border-outline-variant focus:border-primary/50 outline-none appearance-none cursor-pointer transition-colors"
+                  >
+                    <option value="">Choose a session…</option>
+                    {sessions
+                      .filter(s => s.requires_registration)
+                      .map(s => (
+                        <option key={s.session_id} value={s.session_id}>
+                          {new Date(s.show_date).toDateString()} {s.show_time} — {s.venue_name}, {s.city_name}
+                        </option>
+                      ))}
+                  </select>
+                  <ChevronRight size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 rotate-90 text-on-surface-variant pointer-events-none" />
                 </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-                  Team Size * ({minTeam}–{maxTeam} members)
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                I am a…
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                {[
+                  { value: 'student',     label: 'Student',     icon: GraduationCap, desc: 'Currently enrolled' },
+                  { value: 'independent', label: 'Independent', icon: Briefcase,     desc: 'Professional / other' },
+                ].map(({ value, label, icon: Icon, desc }) => {
+                  const active = form.participant_type === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => set('participant_type', value)}
+                      className={`relative flex flex-col items-center gap-1.5 px-3 py-4 rounded-xl border-2 text-center transition-all duration-200 overflow-hidden group ${
+                        active
+                          ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                          : 'border-outline-variant bg-surface-container-highest text-on-surface-variant hover:border-primary/30 hover:bg-primary/5'
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+                      )}
+                      <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                      <span className="text-xs font-bold leading-none">{label}</span>
+                      <span className={`text-[10px] leading-none ${active ? 'text-primary/70' : 'text-on-surface-variant/60'}`}>
+                        {desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {form.participant_type === 'student' && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                  College / University <span className="text-error">*</span>
                 </label>
                 <input
-                  type="number"
-                  min={minTeam}
-                  max={maxTeam}
-                  value={form.team_size}
-                  onChange={e => set('team_size', e.target.value)}
-                  placeholder={`${minTeam} to ${maxTeam}`}
-                  className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl
-                    px-4 py-3 border border-outline-variant focus:border-primary/50 outline-none
-                    placeholder-on-surface-variant transition-all"
+                  value={form.college_name}
+                  onChange={e => set('college_name', e.target.value)}
+                  placeholder="e.g. Goa University"
+                  className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl px-4 py-3 border border-outline-variant focus:border-primary/50 outline-none placeholder:text-on-surface-variant/40 transition-colors"
                 />
               </div>
-            </>
-          )}
+            )}
 
-          {/* Info note */}
-          <div className="flex gap-2 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-            <Info size={14} className="text-primary shrink-0 mt-0.5" />
-            <p className="text-xs text-on-surface-variant">
-              {isFree
-                ? 'Your spot will be confirmed instantly after submission.'
-                : `You will be redirected to pay ₹${fee.toLocaleString('en-IN')} via Stripe. Your registration is confirmed only after successful payment.`
-              }
-            </p>
+            {isTeam && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                    Team Name <span className="text-error">*</span>
+                  </label>
+                  <div className="relative">
+                    <Users size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                    <input
+                      value={form.team_name}
+                      onChange={e => set('team_name', e.target.value)}
+                      placeholder="e.g. Team Nexus"
+                      className="w-full pl-9 pr-4 py-3 bg-surface-container-highest text-on-surface text-sm rounded-xl border border-outline-variant focus:border-primary/50 outline-none placeholder:text-on-surface-variant/40 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                    Team Size <span className="text-error">*</span>
+                    <span className="ml-1 normal-case font-normal opacity-60">({minTeam}–{maxTeam} members)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={minTeam}
+                    max={maxTeam}
+                    value={form.team_size}
+                    onChange={e => set('team_size', e.target.value)}
+                    placeholder={`${minTeam} to ${maxTeam}`}
+                    className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl px-4 py-3 border border-outline-variant focus:border-primary/50 outline-none placeholder:text-on-surface-variant/40 transition-colors"
+                  />
+                </div>
+              </>
+            )}
+
+            <div className="flex gap-2.5 bg-surface-container-highest rounded-xl px-4 py-3 border border-outline-variant/50">
+              {isPaid ? <Lock size={13} className="text-on-surface-variant shrink-0 mt-0.5" />
+                      : <Info size={13} className="text-primary shrink-0 mt-0.5" />}
+              <p className="text-xs text-on-surface-variant leading-relaxed">
+                {isFree
+                  ? 'Your spot will be confirmed instantly after submission.'
+                  : `You'll be redirected to Stripe to pay ₹${fee.toLocaleString('en-IN')}. Registration is confirmed only after successful payment.`
+                }
+              </p>
+            </div>
+
           </div>
 
-          {/* Submit */}
-          <button type="submit" disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm
-              bg-primary text-on-primary hover:bg-primary-container transition-all
-              disabled:opacity-50 shadow-lg shadow-primary/20">
-            {submitting
-              ? (isPaid ? 'Redirecting to payment…' : 'Submitting…')
-              : (isFree ? 'Confirm Registration' : `Pay ₹${fee.toLocaleString('en-IN')} & Register`)
-            }
-            {!submitting && <ChevronRight size={16} />}
-          </button>
+          <div className="px-6 pb-6">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="relative w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm bg-primary text-on-primary overflow-hidden hover:brightness-110 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-primary/20"
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-on-primary/40 border-t-on-primary rounded-full animate-spin" />
+                  <span>{isPaid ? 'Redirecting to payment…' : 'Submitting…'}</span>
+                </>
+              ) : (
+                <>
+                  <span>
+                    {isFree ? 'Confirm Registration' : `Pay ₹${fee.toLocaleString('en-IN')} & Register`}
+                  </span>
+                  <ChevronRight size={15} />
+                </>
+              )}
+            </button>
+          </div>
         </form>
+
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ const createBooking = async (req, res) => {
       },
       success_url: `${process.env.CLIENT_URL}/booking/confirm?booking_id=${result.booking_id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.CLIENT_URL}/booking/cancel?booking_id=${result.booking_id}`,
-      expires_at:  Math.floor(Date.now() / 1000) + 15 * 60, // 15 min — matches seat lock
+      expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // 15 min — matches seat lock
     });
 
     // Store stripe session id on booking
