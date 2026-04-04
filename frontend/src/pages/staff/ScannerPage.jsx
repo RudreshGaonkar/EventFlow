@@ -6,7 +6,7 @@ import {
   Loader2, ArrowLeft, Ticket, MapPin, CalendarDays,
   Clock, Tag, Armchair, Circle
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import useAuth from '../../hooks/useAuth'; // '../../context/AuthContext';
 import { validateTicket } from '../../services/scanner';
 
 const IDLE = 'idle';

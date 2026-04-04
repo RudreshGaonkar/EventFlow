@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser]       = useState(null);
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     return () => { controller.abort(); clearTimeout(timeout); };
   }, []);
 
-  const login = (userData) => setUser(userData);
+  const login  = (userData) => setUser(userData);
 
   const logout = async () => {
     try { await api.post('/auth/logout'); } catch {}
@@ -50,10 +50,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return ctx;
 };

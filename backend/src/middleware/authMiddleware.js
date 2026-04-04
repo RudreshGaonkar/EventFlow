@@ -27,14 +27,17 @@ const protect = (req, res, next) => {
 };
 
 const optionalAuth = (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header) return next(); // guest — no token, just continue
+  // Check header first, fall back to cookie — same pattern as protect
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : req.cookies?.token; // ← add this
+
+  if (!token) return next();
 
   try {
-    const token = header.split(' ')[1];
     req.user = jwt.verify(token, process.env.JWT_SECRET);
   } catch {
-    // invalid/expired token — treat as guest
     req.user = null;
   }
   next();

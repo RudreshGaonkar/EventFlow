@@ -25,7 +25,7 @@ export default function ConfirmPage() {
       try {
         const [bRes, tRes] = await Promise.all([
           api.get(`/booking/${booking_id}`),
-          api.get(`/payment/tickets/${booking_id}`),
+          api.get(`/tickets/booking/${booking_id}`),
         ]);
 
         const bData = bRes.data.data;
