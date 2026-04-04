@@ -5,7 +5,7 @@ const { allowRoles }    = require('../../middleware/roleMiddleware');
 const { bookingLimiter }= require('../../middleware/rateLimiter');
 const { validate }      = require('../../middleware/validate');
 const {
-  createBooking,
+  createBooking,getJobStatus,
   getMyBookings,
   getBookingDetail,
   cancelMyBooking,
@@ -32,6 +32,15 @@ router.get(
   protect,
   allowRoles('Attendee'),
   getMyBookings
+);
+
+router.get(
+  '/status/:job_id',
+  protect,
+  allowRoles('Attendee'),
+  [param('job_id').isUUID().withMessage('Invalid job ID')],
+  validate,
+  getJobStatus
 );
 
 // ── Single booking detail ─────────────────────────────────────────────────────

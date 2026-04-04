@@ -13,14 +13,14 @@ export default function RegistrationPage() {
   const [qp] = useSearchParams();
   const navigate = useNavigate();
 
-  const [event,      setEvent]      = useState(null);
-  const [sessions,   setSessions]   = useState([]);
-  const [loading,    setLoading]    = useState(true);
+  const [event,setEvent]= useState(null);
+  const [sessions,setSessions]= useState([]);
+  const [loading,setLoading]= useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState('');
+  const [error,setError]= useState('');
 
   const [form, setForm] = useState({
-    session_id:       qp.get('session_id') || '',
+    session_id:qp.get('session_id') || '',
     participant_type: 'student',
     college_name:     '',
     team_name:        '',
@@ -48,10 +48,8 @@ export default function RegistrationPage() {
   const maxTeam = Number(event?.max_team_size || 10);
 
   const hasPreselectedSession = Boolean(qp.get('session_id'));
-  const showSessionPicker =
-    !hasPreselectedSession &&
-    sessions.length > 1 &&
-    sessions.some(s => s.requires_registration);
+  const showSessionPicker = !hasPreselectedSession && sessions.length > 1 &&
+                            sessions.some(s => s.requires_registration);
 
   const validate = () => {
     if (!form.participant_type) return 'Select participant type';
@@ -77,8 +75,8 @@ export default function RegistrationPage() {
       const payload = {
         participant_type: form.participant_type,
         college_name: form.participant_type === 'student' ? form.college_name : undefined,
-        team_name:    isTeam ? form.team_name              : undefined,
-        team_size:    isTeam ? Number(form.team_size)      : undefined,
+        team_name:    isTeam ? form.team_name: undefined,
+        team_size:    isTeam ? Number(form.team_size): undefined,
         session_id:   form.session_id ? Number(form.session_id) : undefined,
       };
       const { data } = await registerForEvent(event_id, payload);
