@@ -2,19 +2,34 @@ const { getPool } = require('../../config/db');
 
 const callConfirmBooking = async (booking_id, stripe_payment_intent_id, stripe_signature, amount) => {
   const pool = getPool();
+  const conn = await pool.getConnection();
 
-  await pool.execute('SET @result_code = 0, @result_msg = ""');
+  console.log('[callConfirmBooking] Got dedicated connection');
+  console.log('[callConfirmBooking] Params:', { booking_id, stripe_payment_intent_id, stripe_signature: stripe_signature?.slice(0, 30) + '...', amount });
 
-  await pool.execute(
-    'CALL confirm_booking(?, ?, ?, ?, @result_code, @result_msg)',
-    [booking_id, stripe_payment_intent_id, stripe_signature, amount]
-  );
+  try {
+    await conn.execute('SET @result_code = 0, @result_msg = ""');
+    console.log('[callConfirmBooking] SET session vars done');
 
-  const [[out]] = await pool.execute(
-    'SELECT @result_code AS result_code, @result_msg AS result_msg'
-  );
+    await conn.execute(
+      'CALL confirm_booking(?, ?, ?, ?, @result_code, @result_msg)',
+      [booking_id, stripe_payment_intent_id, stripe_signature, amount]
+    );
+    console.log('[callConfirmBooking] CALL confirm_booking done');
 
-  return out;
+    const [[out]] = await conn.execute(
+      'SELECT @result_code AS result_code, @result_msg AS result_msg'
+    );
+    console.log('[callConfirmBooking] OUT params:', out);
+
+    return out;
+  } catch (err) {
+    console.error('[callConfirmBooking] SQL error:', err.message);
+    throw err;
+  } finally {
+    conn.release();
+    console.log('[callConfirmBooking] Connection released');
+  }
 };
 
 const getBookingByStripeSession = async (stripe_session_id) => {

@@ -9,25 +9,24 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      controller.abort();
-      setLoading(false);
-    }, 3000);
 
     const fetchProfile = async () => {
       try {
-        const res = await api.get('/auth/profile', { signal: controller.signal });
+        const res = await api.get('/auth/profile', {
+          signal: controller.signal,
+          timeout: 10000,
+        });
         setUser(res.data.data);
-      } catch {
+      } catch (err) {
+        if (err.name === 'CanceledError' || err.name === 'AbortError') return;
         setUser(null);
-      } finally {
-        clearTimeout(timeout);
-        setLoading(false);
       }
+
+      setLoading(false);
     };
 
     fetchProfile();
-    return () => { controller.abort(); clearTimeout(timeout); };
+    return () => { controller.abort(); };
   }, []);
 
   const login  = (userData) => setUser(userData);

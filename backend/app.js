@@ -22,11 +22,11 @@ app.use(
   require('./src/modules/registration/routes')
 );
 
-// Payment webhook — raw body handled here, NOT inside routes.js
-app.use(
+// Payment webhook — raw body, handler mounted directly
+app.post(
   '/api/payment/webhook',
   express.raw({ type: 'application/json' }),
-  require('./src/modules/payment/routes')
+  require('./src/modules/payment/service').handleWebhook
 );
 
 // ─── Body Parsers (after webhook routes) ─────────────────────────────────────
