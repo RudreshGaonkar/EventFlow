@@ -1,6 +1,6 @@
-const express      = require('express');
-const helmet       = require('helmet');
-const cors         = require('cors');
+const express= require('express');
+const helmet= require('helmet');
+const cors= require('cors');
 const cookieParser = require('cookie-parser');
 const { initStripe } = require('./src/config/stripe');
 
@@ -76,5 +76,14 @@ app.use((err, req, res, next) => {
 
 // ─── Init Stripe ──────────────────────────────────────────────────────────────
 initStripe();
+
+const bookingConsumer = require('./src/workers/bookingConsumer');
+bookingConsumer.start();
+
+process.on('SIGTERM', async () => {
+  await bookingConsumer.stop();
+  process.exit(0);
+});
+
 
 module.exports = app;

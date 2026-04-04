@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+
 
 const STATUS_COLOR = {
   Available: 'bg-tertiary-container border-tertiary text-on-tertiary-container hover:opacity-90 cursor-pointer',
@@ -8,16 +9,33 @@ const STATUS_COLOR = {
   Booked:    'bg-error-container border-error text-on-error-container cursor-not-allowed opacity-50',
 };
 
+// ── Booking button label based on current state ───────────────────────────────
+const BOOK_LABEL = {
+  idle:       'Proceed to Pay →',
+  queued:     'Queuing booking…',
+  processing: 'Confirming seats…',
+  redirecting:'Redirecting to payment…',
+};
+
+
 export default function SeatsPage() {
   const { session_id } = useParams();
   const navigate = useNavigate();
 
-  const [seats,   setSeats]   = useState([]);
+  const [seats,    setSeats]    = useState([]);
   const [selected, setSelected] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
-  const [error,   setError]   = useState('');
+  const [loading,  setLoading]  = useState(true);
+  const [jobState, setJobState] = useState('idle'); // idle | queued | processing | redirecting
+  const [error,    setError]    = useState('');
 
+  const pollRef = useRef(null); // holds the setInterval id
+
+  // ── Cleanup polling on unmount ──────────────────────────────────────────────
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  // ── Load seats ──────────────────────────────────────────────────────────────
   useEffect(() => {
     api.get(`/seats/session/${session_id}`)
       .then(r => setSeats(r.data.data.seats))
@@ -34,18 +52,53 @@ export default function SeatsPage() {
     );
   };
 
+  // ── Poll job status every 2s until done or failed ───────────────────────────
+  const startPolling = (job_id) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await api.get(`/booking/status/${job_id}`);
+        const job = data.data;
+
+        if (job.status === 'processing') {
+          setJobState('processing');
+        }
+
+        if (job.status === 'done') {
+          clearInterval(pollRef.current);
+          setJobState('redirecting');
+          window.location.href = job.data.checkout_url;
+        }
+
+        if (job.status === 'failed') {
+          clearInterval(pollRef.current);
+          setError(job.message || 'Booking failed — please try again');
+          setJobState('idle');
+        }
+
+      } catch {
+        // network blip — keep polling silently
+      }
+    }, 2000);
+  };
+
+  // ── Submit booking → queue → poll ───────────────────────────────────────────
   const handleBook = async () => {
     if (!selected.length) return;
-    setBooking(true); setError('');
+    setError('');
+    setJobState('queued');
+
     try {
       const { data } = await api.post('/booking', {
         session_id: Number(session_id),
-        seat_ids: selected,
+        seat_ids:   selected,
       });
-      window.location.href = data.data.checkout_url;
+
+      // Backend returns 202 + job_id — start polling
+      startPolling(data.data.job_id);
+
     } catch (err) {
       setError(err.response?.data?.message || 'Booking failed');
-      setBooking(false);
+      setJobState('idle');
     }
   };
 
@@ -53,6 +106,8 @@ export default function SeatsPage() {
     (acc[s.tier_name] = acc[s.tier_name] || []).push(s);
     return acc;
   }, {});
+
+  const isbusy = jobState !== 'idle';
 
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -76,6 +131,7 @@ export default function SeatsPage() {
               <button
                 key={seat.session_seat_id}
                 onClick={() => toggle(seat)}
+                disabled={isbusy}
                 className={`
                   w-12 h-12 rounded border-2 text-xs font-medium transition-all
                   ${STATUS_COLOR[seat.status]}
@@ -127,10 +183,14 @@ export default function SeatsPage() {
           </div>
           <button
             onClick={handleBook}
-            disabled={booking}
-            className="bg-primary text-on-primary px-5 py-2 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition"
+            disabled={isbusy}
+            className="bg-primary text-on-primary px-5 py-2 rounded-lg font-medium
+              hover:opacity-90 disabled:opacity-50 transition flex items-center gap-2"
           >
-            {booking ? 'Redirecting…' : 'Proceed to Pay →'}
+            {isbusy && (
+              <span className="w-4 h-4 border-2 border-on-primary/40 border-t-on-primary rounded-full animate-spin" />
+            )}
+            {BOOK_LABEL[jobState]}
           </button>
         </div>
       )}
