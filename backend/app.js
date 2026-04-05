@@ -1,8 +1,11 @@
-const express= require('express');
-const helmet= require('helmet');
-const cors= require('cors');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { initStripe } = require('./src/config/stripe');
+const cron = require('node-cron');
+const { cleanupExpiredLocks } = require('./src/modules/seats/service');
+
 
 // ─── App init MUST come first ─────────────────────────────────────────────────
 const app = express();
@@ -40,24 +43,30 @@ app.get('/health', (req, res) => {
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use('/api/auth',         require('./src/modules/auth/routes'));
-app.use('/api/admin',        require('./src/modules/admin/routes'));
-app.use('/api/events',       require('./src/modules/events/routes'));
-app.use('/api/seats',        require('./src/modules/seats/routes'));
-app.use('/api/booking',      require('./src/modules/booking/routes'));
-app.use('/api/payment',      require('./src/modules/payment/routes'));
-app.use('/api/tickets',      require('./src/modules/tickets/routes'));
-app.use('/api/scanner',      require('./src/modules/scanner/routes'));
-app.use('/api/staff',        require('./src/modules/staff/routes'));
-app.use('/api/organizer',    require('./src/modules/organizer/routes'));
-app.use('/api/venue-owner',  require('./src/modules/venue-owner/routes'));
-app.use('/api/browse',       require('./src/modules/browse/routes'));
+app.use('/api/auth', require('./src/modules/auth/routes'));
+app.use('/api/admin', require('./src/modules/admin/routes'));
+app.use('/api/events', require('./src/modules/events/routes'));
+app.use('/api/seats', require('./src/modules/seats/routes'));
+app.use('/api/booking', require('./src/modules/booking/routes'));
+app.use('/api/payment', require('./src/modules/payment/routes'));
+app.use('/api/tickets', require('./src/modules/tickets/routes'));
+app.use('/api/scanner', require('./src/modules/scanner/routes'));
+app.use('/api/staff', require('./src/modules/staff/routes'));
+app.use('/api/organizer', require('./src/modules/organizer/routes'));
+app.use('/api/venue-owner', require('./src/modules/venue-owner/routes'));
+app.use('/api/browse', require('./src/modules/browse/routes'));
 app.use('/api/registration', require('./src/modules/registration/routes'));
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 const { updateSessionStatuses } = require('./src/jobs/sessionStatusUpdater');
 updateSessionStatuses();
 setInterval(updateSessionStatuses, 5 * 60 * 1000);
+
+// Runs every 2 minutes — releases seats locked > 15 min ago
+cron.schedule('*/2 * * * *', async () => {
+  const released = await cleanupExpiredLocks();
+  if (released > 0) console.log(`[Cron] Released ${released} expired seat locks`);
+});
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {

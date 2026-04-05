@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, User, ChevronRight, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, User, Clock } from 'lucide-react';
 import { getMyRegistrations, cancelRegistration } from '../../services/registration';
 
 const STATUS_STYLE = {
@@ -29,7 +28,10 @@ export default function MyRegistrationsPage() {
     setCancelling(id);
     try {
       await cancelRegistration(id);
-      load();
+      // Flip status locally — no loading skeleton, no page reload
+      setRegs(prev =>
+        prev.map(r => r.registration_id === id ? { ...r, status: 'Cancelled' } : r)
+      );
     } catch (err) {
       alert(err.response?.data?.message || 'Could not cancel');
     } finally {
@@ -136,10 +138,6 @@ export default function MyRegistrationsPage() {
                           {cancelling === reg.registration_id ? 'Cancelling…' : 'Cancel'}
                         </button>
                       )}
-                      <Link to={`/registration/${reg.registration_id}`}
-                        className="flex justify-center items-center gap-1.5 text-xs font-bold w-full sm:w-auto px-4 py-2 rounded-xl bg-primary text-on-primary hover:opacity-90 transition-all shadow-sm shadow-primary/20">
-                        Details <ChevronRight size={14} />
-                      </Link>
                     </div>
                   </div>
                 </div>

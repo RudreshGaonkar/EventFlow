@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Ticket, ChevronRight, CreditCard } from 'lucide-react';
+import { MapPin, Ticket, CreditCard } from 'lucide-react';
 import api from '../../services/api';
+import { cancelBooking } from '../../services/booking';
 
 const STATUS_BADGE = {
   Confirmed:  'bg-success/10 text-success border border-success/20',
@@ -11,14 +12,31 @@ const STATUS_BADGE = {
 };
 
 export default function MyBookingsPage() {
-  const [bookings, setBookings] = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [bookings,   setBookings]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [cancelling, setCancelling] = useState(null);
 
   useEffect(() => {
     api.get('/booking/my')
       .then(r => setBookings(r.data.data))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleCancel = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+    setCancelling(id);
+    try {
+      await cancelBooking(id);
+      // Flip status locally — no page reload or loading skeleton
+      setBookings(prev =>
+        prev.map(b => b.booking_id === id ? { ...b, booking_status: 'Cancelled' } : b)
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not cancel booking');
+    } finally {
+      setCancelling(null);
+    }
+  };
 
   if (loading) return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
@@ -51,11 +69,11 @@ export default function MyBookingsPage() {
             const dateObj = new Date(b.show_date);
             const month = dateObj.toLocaleString('en-US', { month: 'short' });
             const day = dateObj.getDate();
+            const canCancel = ['Confirmed', 'Pending'].includes(b.booking_status);
 
             return (
-              <Link
+              <div
                 key={b.booking_id}
-                to={`/booking/${b.booking_id}`}
                 className="group flex flex-col sm:flex-row bg-surface-container border border-outline-variant rounded-2xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300"
               >
                 {/* Date Block */}
@@ -88,11 +106,32 @@ export default function MyBookingsPage() {
                   </div>
                 </div>
 
-                {/* Action arrow */}
-                <div className="hidden sm:flex items-center justify-center p-5 text-on-surface-variant group-hover:text-primary transition-colors">
-                  <ChevronRight size={24} />
+                {/* Cancel Action */}
+                <div className="hidden sm:flex items-center justify-center p-5">
+                  {canCancel && (
+                    <button
+                      onClick={() => handleCancel(b.booking_id)}
+                      disabled={cancelling === b.booking_id}
+                      className="text-xs font-bold px-4 py-2 rounded-xl border border-error/30 text-error hover:bg-error/10 hover:border-error/50 transition-all disabled:opacity-40"
+                    >
+                      {cancelling === b.booking_id ? 'Cancelling…' : 'Cancel'}
+                    </button>
+                  )}
                 </div>
-              </Link>
+
+                {/* Mobile Cancel */}
+                {canCancel && (
+                  <div className="sm:hidden px-5 pb-4">
+                    <button
+                      onClick={() => handleCancel(b.booking_id)}
+                      disabled={cancelling === b.booking_id}
+                      className="w-full text-xs font-bold px-4 py-2 rounded-xl border border-error/30 text-error hover:bg-error/10 hover:border-error/50 transition-all disabled:opacity-40"
+                    >
+                      {cancelling === b.booking_id ? 'Cancelling…' : 'Cancel Booking'}
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

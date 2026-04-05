@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Ticket, ChevronDown, User,
+  Ticket, ChevronDown, User, Users,
   BookOpen, LogOut, Settings, Shield, Menu, X, LayoutDashboard, Building2
 } from 'lucide-react';
 import useAuth from '../../hooks/useAuth'; // '../../context/AuthContext';
@@ -139,8 +139,9 @@ export default function Navbar() {
                     </div>
 
                     {[
-                      { icon: BookOpen, label: 'My Bookings', to: '/bookings' },
-                      { icon: User,     label: 'Profile',     to: '/profile'  },
+                      { icon: BookOpen, label: 'My Bookings',      to: '/my-bookings'      },
+                      { icon: Users,    label: 'My Registrations', to: '/my-registrations' },
+                      { icon: User,     label: 'Profile',          to: '/profile'          },
                     ].map(({ icon: Icon, label, to }) => (
                       <Link key={to} to={to}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm
@@ -204,8 +205,9 @@ export default function Navbar() {
                   </div>
 
                   {[
-                    { label: 'My Bookings', to: '/bookings' },
-                    { label: 'Profile',     to: '/profile'  },
+                    { label: 'My Bookings',      to: '/my-bookings'      },
+                    { label: 'My Registrations', to: '/my-registrations' },
+                    { label: 'Profile',          to: '/profile'          },
                     ...(hasRole('System Admin')    ? [{ label: 'Admin Panel',         to: '/admin'       }] : []),
                     ...(hasRole('Event Organizer') ? [{ label: 'Organizer Dashboard', to: '/organizer'   }] : []),
                     ...(hasRole('Venue Owner')     ? [{ label: 'My Venues',           to: '/venue-owner' }] : []),
