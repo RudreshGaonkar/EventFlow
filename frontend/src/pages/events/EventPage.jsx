@@ -5,12 +5,13 @@ import {
   MapPin, Calendar, AlertCircle, Users, Ticket, FileText
 } from 'lucide-react';
 import { getEventDetail, getEventSessions } from '../../services/browse';
+import ReviewSection from '../../components/reviews/ReviewSection';
 
 const RATING_BADGE = {
-  G:  'bg-tertiary/20 text-tertiary border-tertiary/30',
+  G: 'bg-tertiary/20 text-tertiary border-tertiary/30',
   UA: 'bg-secondary/20 text-secondary border-secondary/30',
-  A:  'bg-secondary-container/30 text-secondary border-secondary/20',
-  S:  'bg-error-container/30 text-error border-error/20',
+  A: 'bg-secondary-container/30 text-secondary border-secondary/20',
+  S: 'bg-error-container/30 text-error border-error/20',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -18,7 +19,7 @@ const RATING_BADGE = {
 const formatTime12 = (timeStr) => {
   if (!timeStr) return '';
   const [h, m] = timeStr.split(':');
-  const hr   = parseInt(h);
+  const hr = parseInt(h);
   const ampm = hr >= 12 ? 'PM' : 'AM';
   const hr12 = hr % 12 || 12;
   return `${hr12}:${m} ${ampm}`;
@@ -35,10 +36,10 @@ const formatDuration = (mins) => {
 
 function SessionCard({ session, onSelect }) {
   const available = session.available_seats;
-  const pct    = session.total_seats > 0
+  const pct = session.total_seats > 0
     ? Math.round((session.booked_seats / session.total_seats) * 100) : 0;
   const isFull = available === 0;
-  const isHot  = pct >= 60 && !isFull;
+  const isHot = pct >= 60 && !isFull;
 
   return (
     <button
@@ -62,8 +63,8 @@ function SessionCard({ session, onSelect }) {
         {isFull
           ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-error/10 text-error border border-error/20">Sold Out</span>
           : isHot
-          ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary/10 text-secondary border border-secondary/20">Filling Fast</span>
-          : <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20">Available</span>
+            ? <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary/10 text-secondary border border-secondary/20">Filling Fast</span>
+            : <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-tertiary/10 text-tertiary border border-tertiary/20">Available</span>
         }
       </div>
 
@@ -103,7 +104,7 @@ function RegistrationBanner({ event, onRegister }) {
   const isPaid = event.registration_mode === 'paid_registration';
   const isTeam = event.participation_type === 'team';
   const isBoth = event.participation_type === 'both';
-  const fee    = Number(event.registration_fee || 0);
+  const fee = Number(event.registration_fee || 0);
 
   return (
     <div className="bg-primary-container/20 border border-primary/20 rounded-2xl p-5 space-y-4">
@@ -156,9 +157,9 @@ function RegistrationBanner({ event, onRegister }) {
 // ── Sub-session Card (registration events) ────────────────────────────────────
 
 function SubSessionCard({ session, onSubRegister }) {
-  const needsReg  = session.requires_registration;
-  const isFull    = session.session_max_participants !== null &&
-                    session.session_registered >= session.session_max_participants;
+  const needsReg = session.requires_registration;
+  const isFull = session.session_max_participants !== null &&
+    session.session_registered >= session.session_max_participants;
   const spotsLeft = session.session_max_participants
     ? session.session_max_participants - (session.session_registered || 0)
     : null;
@@ -216,12 +217,12 @@ function SubSessionCard({ session, onSubRegister }) {
 
 export default function EventPage() {
   const { event_id } = useParams();
-  const navigate     = useNavigate();
+  const navigate = useNavigate();
 
-  const [event,      setEvent]      = useState(null);
-  const [sessions,   setSessions]   = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [loadError,  setLoadError]  = useState(false); // ✅ NEW: replaces catch navigate('/')
+  const [event, setEvent] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false); // ✅ NEW: replaces catch navigate('/')
   const [cityFilter, setCityFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
 
@@ -277,7 +278,7 @@ export default function EventPage() {
 
   const filtered = sessions.filter(s => {
     if (cityFilter && String(s.city_id) !== String(cityFilter)) return false;
-    if (dateFilter && s.show_date !== dateFilter)               return false;
+    if (dateFilter && s.show_date !== dateFilter) return false;
     return true;
   });
 
@@ -312,7 +313,7 @@ export default function EventPage() {
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {event.poster_url
             ? <img src={event.poster_url} alt=""
-                className="w-full h-full object-cover object-top blur-2xl scale-110 brightness-25 saturate-150" />
+              className="w-full h-full object-cover object-top blur-2xl scale-110 brightness-25 saturate-150" />
             : <div className="w-full h-full bg-surface-container-low" />
           }
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-background/80 to-background" />
@@ -332,8 +333,8 @@ export default function EventPage() {
               {event.poster_url
                 ? <img src={event.poster_url} alt={event.title} className="w-full aspect-[2/3] object-cover" />
                 : <div className="w-full aspect-[2/3] bg-surface-container-highest flex items-center justify-center">
-                    <span className="text-4xl">🎬</span>
-                  </div>
+                  <span className="text-4xl">🎬</span>
+                </div>
               }
             </div>
 
@@ -441,8 +442,8 @@ export default function EventPage() {
                       {p.photo_url
                         ? <img src={p.photo_url} className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-outline-variant" alt={p.real_name} />
                         : <div className="w-9 h-9 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-on-surface-variant">{p.real_name?.[0]}</span>
-                          </div>
+                          <span className="text-xs font-bold text-on-surface-variant">{p.real_name?.[0]}</span>
+                        </div>
                       }
                       <div>
                         <p className="text-sm font-semibold text-on-surface">{p.real_name}</p>
@@ -463,8 +464,8 @@ export default function EventPage() {
                       {p.photo_url
                         ? <img src={p.photo_url} className="w-14 h-14 rounded-2xl object-cover ring-1 ring-outline-variant" alt={p.real_name} />
                         : <div className="w-14 h-14 rounded-2xl bg-surface-container-highest flex items-center justify-center ring-1 ring-outline-variant">
-                            <span className="text-lg font-bold text-on-surface-variant">{p.real_name?.[0]}</span>
-                          </div>
+                          <span className="text-lg font-bold text-on-surface-variant">{p.real_name?.[0]}</span>
+                        </div>
                       }
                       <p className="text-[10px] text-on-surface font-semibold leading-tight">{p.real_name}</p>
                       {p.character_name && (
@@ -593,6 +594,8 @@ export default function EventPage() {
           </div>
 
         </div>
+        {/* ── Reviews ── */}
+        <ReviewSection eventId={event_id} />
       </div>
     </div>
   );

@@ -6,7 +6,8 @@ const {
   getEventPeople, addPersonToEvent, removePersonFromEvent,
   getSessionsByEvent, createSession, updateSessionMultiplier, updateSessionStatus,
   getReviewsByEvent, getReviewsBySession, createReview,
-  getAvailableSessions, getReviewScores
+  getAvailableSessions, getReviewScores,
+  checkReviewEligibility, getMyReview, getReviewById, updateReview,
 } = require('./queries');
 
 // ── Parent Events ─────────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ const getEvent = async (req, res) => {
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
     }
-    const cast   = await getEventPeople(req.params.event_id);
+    const cast = await getEventPeople(req.params.event_id);
     const scores = await getReviewScores(req.params.event_id);
     return res.status(200).json({ success: true, data: { ...event, cast, scores } });
   } catch (err) {
@@ -47,13 +48,13 @@ const addEvent = async (req, res) => {
       registration_fee, event_scope, listing_days_ahead,
     } = req.body;
 
-    let poster_url       = null;
+    let poster_url = null;
     let poster_public_id = null;
 
     if (req.file) {
-      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'posters', null);
-      poster_url       = uploaded.secure_url;
+      poster_url = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
 
@@ -93,14 +94,14 @@ const editEvent = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not your event' });
     }
 
-    let poster_url       = existing.poster_url;
+    let poster_url = existing.poster_url;
     let poster_public_id = existing.poster_public_id;
 
     if (req.file) {
       if (existing.poster_public_id) await deleteFile(existing.poster_public_id);
-      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'posters', null);
-      poster_url       = uploaded.secure_url;
+      poster_url = uploaded.secure_url;
       poster_public_id = uploaded.public_id;
     }
 
@@ -154,13 +155,13 @@ const addPerson = async (req, res) => {
   try {
     const { real_name, bio } = req.body;
 
-    let photo_url       = null;
+    let photo_url = null;
     let photo_public_id = null;
 
     if (req.file) {
-      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'cast', null);
-      photo_url       = uploaded.secure_url;
+      photo_url = uploaded.secure_url;
       photo_public_id = uploaded.public_id;
     }
 
@@ -174,16 +175,16 @@ const addPerson = async (req, res) => {
 
 const editPerson = async (req, res) => {
   try {
-    const { person_id }            = req.params;
-    const { real_name, bio }       = req.body;
-    let photo_url       = req.body.photo_url        || null;
-    let photo_public_id = req.body.photo_public_id  || null;
+    const { person_id } = req.params;
+    const { real_name, bio } = req.body;
+    let photo_url = req.body.photo_url || null;
+    let photo_public_id = req.body.photo_public_id || null;
 
     if (req.file) {
       if (photo_public_id) await deleteFile(photo_public_id);
-      const b64      = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      const b64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
       const uploaded = await uploadFile(b64, 'cast', null);
-      photo_url       = uploaded.secure_url;
+      photo_url = uploaded.secure_url;
       photo_public_id = uploaded.public_id;
     }
 
@@ -286,7 +287,7 @@ const addSession = async (req, res) => {
 
 const editSessionMultiplier = async (req, res) => {
   try {
-    const { session_id }       = req.params;
+    const { session_id } = req.params;
     const { demand_multiplier } = req.body;
     await updateSessionMultiplier(session_id, demand_multiplier);
     return res.status(200).json({ success: true, message: 'Demand multiplier updated' });
@@ -299,7 +300,7 @@ const editSessionMultiplier = async (req, res) => {
 const editSessionStatus = async (req, res) => {
   try {
     const { session_id } = req.params;
-    const { status }     = req.body;
+    const { status } = req.body;
     await updateSessionStatus(session_id, status);
     return res.status(200).json({ success: true, message: 'Session status updated' });
   } catch (err) {
@@ -332,22 +333,21 @@ const getSessionReviews = async (req, res) => {
 
 const addReview = async (req, res) => {
   try {
-    const { event_id, session_id, rating, review_text } = req.body;
+    const { eventid, sessionid, rating, review_text } = req.body;
 
-    if ((event_id && session_id) || (!event_id && !session_id)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Review must target either an event or a session — not both or neither',
-      });
-    }
+    if ((eventid && sessionid) || (!eventid && !sessionid))
+      return res.status(400).json({ success: false, message: 'Review must target either an event or a session — not both or neither' });
 
-    const id = await createReview(req.user.user_id, event_id, session_id, rating, review_text);
-    return res.status(201).json({ success: true, message: 'Review submitted', data: { review_id: id } });
+    const eligible = await checkReviewEligibility(req.user.user_id, eventid || null, sessionid || null);
+    if (!eligible)
+      return res.status(403).json({ success: false, message: 'You can only review after the event/session is over and you have a confirmed booking or registration' });
+
+    const id = await createReview(req.user.user_id, eventid || null, sessionid || null, rating, review_text);
+    return res.status(201).json({ success: true, message: 'Review submitted', data: { reviewid: id } });
   } catch (err) {
-    console.error('[Events] addReview error:', err.message);
-    if (err.message.includes('Duplicate')) {
+    console.error('Events addReview error:', err.message);
+    if (err.message.includes('Duplicate'))
       return res.status(409).json({ success: false, message: 'You have already reviewed this' });
-    }
     return res.status(500).json({ success: false, message: 'Could not submit review' });
   }
 };
@@ -361,7 +361,7 @@ const browseSessions = async (req, res) => {
 
     if (!state_id) {
       const user = await findUserById(req.user.user_id);
-      state_id   = user?.home_state_id;
+      state_id = user?.home_state_id;
     }
 
     if (!state_id) {
@@ -376,11 +376,46 @@ const browseSessions = async (req, res) => {
   }
 };
 
+const editReview = async (req, res) => {
+  try {
+    const { review_id } = req.params;
+    const { rating, review_text } = req.body;
+
+    const review = await getReviewById(review_id);
+    if (!review)
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    if (review.user_id !== req.user.user_id)
+      return res.status(403).json({ success: false, message: 'Not your review' });
+    if (review.edit_count >= 2)
+      return res.status(403).json({ success: false, message: 'Edit limit reached — max 2 edits allowed' });
+
+    await updateReview(review_id, rating, review_text);
+    return res.status(200).json({ success: true, message: 'Review updated' });
+  } catch (err) {
+    console.error('Events editReview error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not update review' });
+  }
+};
+
+const getMyReviewHandler = async (req, res) => {
+  try {
+    const { event_id, session_id } = req.query;
+    if (!event_id && !session_id)
+      return res.status(400).json({ success: false, message: 'Provide event_id or session_id as a query param' });
+
+    const review = await getMyReview(req.user.user_id, event_id || null, session_id || null);
+    return res.status(200).json({ success: true, data: review }); // null if no review yet
+  } catch (err) {
+    console.error('Events getMyReview error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch review' });
+  }
+};
+
 module.exports = {
   getEvents, getEvent, addEvent, editEvent, removeEvent,
   getPeople, addPerson, editPerson,
   getCast, addCast, removeCast,
   getSessions, addSession, editSessionMultiplier, editSessionStatus,
   getEventReviews, getSessionReviews, addReview,
-  browseSessions,
+  browseSessions, editReview, getMyReviewHandler,
 };

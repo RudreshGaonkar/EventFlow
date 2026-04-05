@@ -32,14 +32,14 @@ const createEvent = async (
   rating, duration_mins, age_limit, language, genre,
   poster_url, poster_public_id, trailer_url,
   // ── Registration fields ──
-  registration_mode   = 'booking',
-  participation_type  = 'solo',
-  max_participants    = null,
-  min_team_size       = 1,
-  max_team_size       = 1,
-  registration_fee    = 0,
-  event_scope         = 'national',
-  listing_days_ahead  = null,        // auto-set below if not provided
+  registration_mode = 'booking',
+  participation_type = 'solo',
+  max_participants = null,
+  min_team_size = 1,
+  max_team_size = 1,
+  registration_fee = 0,
+  event_scope = 'national',
+  listing_days_ahead = null,        // auto-set below if not provided
 ) => {
   try {
     const pool = getPool();
@@ -61,15 +61,15 @@ const createEvent = async (
         organizer_id,
         event_type,
         title,
-        description         || null,
-        rating              || null,
-        duration_mins       || null,
-        age_limit           || null,
-        language            || null,
-        genre               || null,
-        poster_url          || null,
-        poster_public_id    || null,
-        trailer_url         || null,
+        description || null,
+        rating || null,
+        duration_mins || null,
+        age_limit || null,
+        language || null,
+        genre || null,
+        poster_url || null,
+        poster_public_id || null,
+        trailer_url || null,
         registration_mode,
         participation_type,
         max_participants,
@@ -91,14 +91,14 @@ const updateEvent = async (
   rating, duration_mins, age_limit, language, genre,
   poster_url, poster_public_id, trailer_url,
   // ── Registration fields ──
-  registration_mode   = 'booking',
-  participation_type  = 'solo',
-  max_participants    = null,
-  min_team_size       = 1,
-  max_team_size       = 1,
-  registration_fee    = 0,
-  event_scope         = 'national',
-  listing_days_ahead  = null,
+  registration_mode = 'booking',
+  participation_type = 'solo',
+  max_participants = null,
+  min_team_size = 1,
+  max_team_size = 1,
+  registration_fee = 0,
+  event_scope = 'national',
+  listing_days_ahead = null,
 ) => {
   try {
     const pool = getPool();
@@ -129,15 +129,15 @@ const updateEvent = async (
       WHERE event_id = ?`,
       [
         title,
-        description         || null,
-        rating              || null,
-        duration_mins       || null,
-        age_limit           || null,
-        language            || null,
-        genre               || null,
-        poster_url          || null,
-        poster_public_id    || null,
-        trailer_url         || null,
+        description || null,
+        rating || null,
+        duration_mins || null,
+        age_limit || null,
+        language || null,
+        genre || null,
+        poster_url || null,
+        poster_public_id || null,
+        trailer_url || null,
         registration_mode,
         participation_type,
         max_participants,
@@ -311,43 +311,50 @@ const updateSessionStatus = async (session_id, status) => {
 
 // Reviews
 
-const getReviewsByEvent = async (event_id) => {
+const getReviewsByEvent = async (eventid) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT r.*, u.full_name FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.event_id = ? ORDER BY r.created_at DESC',
-      [event_id]
+      `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
+              r.rating, r.review_text, r.edit_count, r.created_at,
+              u.fullname
+       FROM reviews r
+       JOIN users u ON r.user_id = u.userid
+       WHERE r.event_id = ?
+       ORDER BY r.created_at DESC`,
+      [eventid]
     );
     return rows;
-  } catch (err) {
-    throw new Error('DB error in getReviewsByEvent: ' + err.message);
-  }
+  } catch (err) { throw new Error(`DB error in getReviewsByEvent: ${err.message}`); }
 };
 
-const getReviewsBySession = async (session_id) => {
+const getReviewsBySession = async (sessionid) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT r.*, u.full_name FROM reviews r JOIN users u ON r.user_id = u.user_id WHERE r.session_id = ? ORDER BY r.created_at DESC',
-      [session_id]
+      `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
+              r.rating, r.review_text, r.edit_count, r.created_at,
+              u.fullname
+       FROM reviews r
+       JOIN users u ON r.user_id = u.userid
+       WHERE r.session_id = ?
+       ORDER BY r.created_at DESC`,
+      [sessionid]
     );
     return rows;
-  } catch (err) {
-    throw new Error('DB error in getReviewsBySession: ' + err.message);
-  }
+  } catch (err) { throw new Error(`DB error in getReviewsBySession: ${err.message}`); }
 };
 
-const createReview = async (user_id, event_id, session_id, rating, review_text) => {
+const createReview = async (userid, eventid, sessionid, rating, reviewtext) => {
   try {
     const pool = getPool();
     const [result] = await pool.execute(
-      'INSERT INTO reviews (user_id, event_id, session_id, rating, review_text) VALUES (?, ?, ?, ?, ?)',
-      [user_id, event_id || null, session_id || null, rating, review_text || null]
+      `INSERT INTO reviews (user_id, event_id, session_id, rating, review_text)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userid, eventid ?? null, sessionid ?? null, rating, reviewtext ?? null]
     );
     return result.insertId;
-  } catch (err) {
-    throw new Error('DB error in createReview: ' + err.message);
-  }
+  } catch (err) { throw new Error(`DB error in createReview: ${err.message}`); }
 };
 
 const getAvailableSessions = async (state_id) => {
@@ -376,11 +383,119 @@ const getReviewScores = async (event_id) => {
   }
 };
 
+// Check if user is eligible to review (confirmed booking/registration + event/session is past)
+const checkReviewEligibility = async (userid, eventid, sessionid) => {
+  try {
+    const pool = getPool();
+
+    if (eventid) {
+      // Via confirmed booking for a past/completed session of this event
+      const [r1] = await pool.execute(
+        `SELECT 1 FROM bookings b
+         JOIN event_sessions es ON es.session_id = b.session_id
+         WHERE b.user_id = ? AND es.event_id = ?
+           AND b.booking_status = 'Confirmed'
+           AND (es.show_date < CURDATE() OR es.status = 'Completed')
+         LIMIT 1`,
+        [userid, eventid]
+      );
+      if (r1.length > 0) return true;
+
+      // Via confirmed registration for this event
+      const [r2] = await pool.execute(
+        `SELECT 1 FROM event_registrations
+         WHERE user_id = ? AND event_id = ? AND status = 'Confirmed'
+         LIMIT 1`,
+        [userid, eventid]
+      );
+      return r2.length > 0;
+    }
+
+    if (sessionid) {
+      // Via confirmed booking for this specific past/completed session
+      const [r1] = await pool.execute(
+        `SELECT 1 FROM bookings b
+         JOIN event_sessions es ON es.session_id = b.session_id
+         WHERE b.user_id = ? AND b.session_id = ?
+           AND b.booking_status = 'Confirmed'
+           AND (es.show_date < CURDATE() OR es.status = 'Completed')
+         LIMIT 1`,
+        [userid, sessionid]
+      );
+      if (r1.length > 0) return true;
+
+      // Via confirmed registration for this specific past/completed session
+      const [r2] = await pool.execute(
+        `SELECT 1 FROM event_registrations er
+         JOIN event_sessions es ON es.session_id = er.session_id
+         WHERE er.user_id = ? AND er.session_id = ?
+           AND er.status = 'Confirmed'
+           AND (es.show_date < CURDATE() OR es.status = 'Completed')
+         LIMIT 1`,
+        [userid, sessionid]
+      );
+      return r2.length > 0;
+    }
+
+    return false;
+  } catch (err) {
+    throw new Error(`DB error in checkReviewEligibility: ${err.message}`);
+  }
+};
+
+// Get the current user's review for a specific event or session
+const getMyReview = async (userid, eventid, sessionid) => {
+  try {
+    const pool = getPool();
+    if (eventid) {
+      const [rows] = await pool.execute(
+        'SELECT * FROM reviews WHERE user_id = ? AND event_id = ?',
+        [userid, eventid]
+      );
+      return rows[0] || null;
+    }
+    if (sessionid) {
+      const [rows] = await pool.execute(
+        'SELECT * FROM reviews WHERE user_id = ? AND session_id = ?',
+        [userid, sessionid]
+      );
+      return rows[0] || null;
+    }
+    return null;
+  } catch (err) { throw new Error(`DB error in getMyReview: ${err.message}`); }
+};
+
+// Fetch a single review by ID (for ownership + edit_count checks)
+const getReviewById = async (reviewid) => {
+  try {
+    const pool = getPool();
+    const [rows] = await pool.execute(
+      'SELECT * FROM reviews WHERE reviewid = ?',
+      [reviewid]
+    );
+    return rows[0] || null;
+  } catch (err) {
+    throw new Error(`DB error in getReviewById: ${err.message}`);
+  }
+};
+
+// Update review text/rating and increment edit counter
+const updateReview = async (reviewid, rating, reviewtext) => {
+  try {
+    const pool = getPool();
+    await pool.execute(
+      `UPDATE reviews SET rating = ?, review_text = ?, edit_count = edit_count + 1
+       WHERE review_id = ?`,
+      [rating, reviewtext ?? null, reviewid]
+    );
+  } catch (err) { throw new Error(`DB error in updateReview: ${err.message}`); }
+};
+
 module.exports = {
   getAllEvents, getEventById, createEvent, updateEvent, softDeleteEvent,
   getAllPeople, createPerson, updatePerson,
   getEventPeople, addPersonToEvent, removePersonFromEvent,
   getSessionsByEvent, createSession, updateSessionMultiplier, updateSessionStatus,
   getReviewsByEvent, getReviewsBySession, createReview,
-  getAvailableSessions, getReviewScores
+  getAvailableSessions, getReviewScores, checkReviewEligibility, getMyReview, getReviewById, updateReview,
 };

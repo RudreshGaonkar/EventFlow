@@ -10,7 +10,7 @@ const {
   getCast, addCast, removeCast,
   getSessions, addSession, editSessionMultiplier, editSessionStatus,
   getEventReviews, getSessionReviews, addReview,
-  browseSessions
+  browseSessions, editReview, getMyReviewHandler,
 } = require('./service');
 
 // multer stores file temporarily in memory before Cloudinary upload
@@ -21,6 +21,27 @@ router.get('/browse', protect, browseSessions);
 
 // Parent Events
 router.get('/', protect, getEvents);
+
+router.get(
+  '/reviews/my',
+  protect,
+  allowRoles('Attendee'),
+  getMyReviewHandler
+);
+
+// PATCH /api/events/reviews/:review_id
+router.patch(
+  '/reviews/:review_id',
+  protect,
+  allowRoles('Attendee'),
+  [
+    param('review_id').isInt({ min: 1 }).withMessage('Invalid review ID'),
+    body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
+    body('review_text').optional().trim(),
+  ],
+  validate,
+  editReview
+);
 
 router.get(
   '/:event_id',
