@@ -9,6 +9,7 @@ const {
   getAvailableSessions, getReviewScores,
   checkReviewEligibility, getMyReview, getReviewById, updateReview,
 } = require('./queries');
+const pool = require('../../config/db').getPool();
 
 // ── Parent Events ─────────────────────────────────────────────────────────────
 
@@ -411,11 +412,47 @@ const getMyReviewHandler = async (req, res) => {
   }
 };
 
+const getMyAllReviews = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT r.review_id, r.rating, r.review_text, r.created_at,
+        COALESCE(pe.title, CONCAT('Session #', r.session_id)) AS eventtitle
+ FROM reviews r
+ LEFT JOIN parent_events pe ON pe.event_id = r.event_id
+ WHERE r.user_id = ?
+ ORDER BY r.created_at DESC`,
+      [req.user.user_id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) {
+    console.error('ERROR:', e.message);
+    res.status(500).json({ success: false, message: 'Could not fetch reviews' });
+  }
+};
+
+const getMyRegistrations = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT er.registration_id, er.status, er.registered_at, er.team_name, er.amount_paid,
+        pe.title AS eventtitle
+ FROM event_registrations er
+ JOIN parent_events pe ON pe.event_id = er.event_id
+ WHERE er.user_id = ?
+ ORDER BY er.registered_at DESC`,
+      [req.user.user_id]
+    );
+    res.json({ success: true, data: rows });
+  } catch (e) {
+    console.error('ERROR:', e.message);
+    res.status(500).json({ success: false, message: 'Could not fetch registrations' });
+  }
+};
+
 module.exports = {
   getEvents, getEvent, addEvent, editEvent, removeEvent,
   getPeople, addPerson, editPerson,
   getCast, addCast, removeCast,
   getSessions, addSession, editSessionMultiplier, editSessionStatus,
   getEventReviews, getSessionReviews, addReview,
-  browseSessions, editReview, getMyReviewHandler,
+  browseSessions, editReview, getMyReviewHandler, getMyAllReviews, getMyRegistrations,
 };

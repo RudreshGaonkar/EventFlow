@@ -1,4 +1,4 @@
-const { uploadFile } = require('../../config/cloudinary');
+const { uploadFile, uploadPDFBuffer } = require('../../config/cloudinary');
 const { getTicketsByBooking, getTicketById, updateTicketPDF } = require('./queries');
 const { generateTicketPDF } = require('./pdfGenerator');
 
@@ -16,11 +16,8 @@ const generateAndUploadTickets = async (booking_id) => {
       // Generate PDF buffer for this ticket
       const pdfBuffer = await generateTicketPDF(ticket);
 
-      // Convert buffer to base64 data URI for Cloudinary
-      const base64PDF = 'data:application/pdf;base64,' + pdfBuffer.toString('base64');
-
-      // Upload to Cloudinary under tickets folder
-      const uploaded = await uploadFile(base64PDF, 'tickets', null);
+      // Stream directly to Cloudinary as a raw PDF — no base64 conversion
+      const uploaded = await uploadPDFBuffer(pdfBuffer, 'tickets');
 
       // Store PDF url and public_id on the ticket row
       await updateTicketPDF(ticket.ticket_id, uploaded.secure_url, uploaded.public_id);

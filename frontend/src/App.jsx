@@ -5,22 +5,23 @@ import RoleGuard from './components/common/RoleGuard';
 import Skeleton from './components/common/LoadingSkeleton';
 import { ToastProvider } from './components/common/Toast';
 import Footer from './components/common/Footer';
+import ProfilePage from './pages/profile/ProfilePage';
 
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 
 // Browse & Events
-import BrowsePage        from './pages/browse/BrowsePage';
-import EventPage         from './pages/events/EventPage';
-import RegistrationPage  from './pages/events/RegisterPage';
+import BrowsePage from './pages/browse/BrowsePage';
+import EventPage from './pages/events/EventPage';
+import RegistrationPage from './pages/events/RegisterPage';
 
 // Seats
 import SeatsPage from './pages/seats/SeatsPage';
 
 // Booking
-import CheckoutPage   from './pages/booking/CheckoutPage';
-import ConfirmPage    from './pages/booking/ConfirmPage';
-import CancelPage     from './pages/booking/CancelPage';
+import CheckoutPage from './pages/booking/CheckoutPage';
+import ConfirmPage from './pages/booking/ConfirmPage';
+import CancelPage from './pages/booking/CancelPage';
 import MyBookingsPage from './pages/booking/MyBookingsPage';
 
 // Tickets
@@ -28,14 +29,14 @@ import TicketsPage from './pages/tickets/TicketsPage';
 
 // Registration
 import RegistrationConfirmPage from './pages/registration/RegistrationConfirmPage';
-import RegistrationCancelPage  from './pages/registration/RegistrationCancelPage';
-import MyRegistrationsPage     from './pages/registration/MyRegistrationsPage';
+import RegistrationCancelPage from './pages/registration/RegistrationCancelPage';
+import MyRegistrationsPage from './pages/registration/MyRegistrationsPage';
 
 // Role-specific
-import AdminPage      from './pages/admin/AdminPage';
-import StaffPage      from './pages/staff/StaffPage';
-import ScannerPage    from './pages/staff/ScannerPage';
-import OrganizerPage  from './pages/organizer/OrganizerPage';
+import AdminPage from './pages/admin/AdminPage';
+import StaffPage from './pages/staff/StaffPage';
+import ScannerPage from './pages/staff/ScannerPage';
+import OrganizerPage from './pages/organizer/OrganizerPage';
 import VenueOwnerPage from './pages/venue-owner/VenueOwnerPage';
 
 // Pages that hide the Navbar
@@ -46,10 +47,10 @@ function RoleRedirect() {
   const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
   const hasRole = (role) => userRoles.includes(role);
 
-  if (hasRole('System Admin'))    return <Navigate to="/admin"        replace />;
-  if (hasRole('Venue Staff'))     return <Navigate to="/staff"        replace />;
-  if (hasRole('Event Organizer')) return <Navigate to="/organizer"    replace />;
-  if (hasRole('Venue Owner'))     return <Navigate to="/venue-owner"  replace />;
+  if (hasRole('System Admin')) return <Navigate to="/admin" replace />;
+  if (hasRole('Venue Staff')) return <Navigate to="/staff" replace />;
+  if (hasRole('Event Organizer')) return <Navigate to="/organizer" replace />;
+  if (hasRole('Venue Owner')) return <Navigate to="/venue-owner" replace />;
 
   return <BrowsePage />;
 }
@@ -147,6 +148,7 @@ export default function App() {
           <Route path="/venue-owner" element={
             <RoleGuard roles={['Venue Owner']}><VenueOwnerPage /></RoleGuard>
           } />
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
           {/* ── Fallback ── */}
           <Route path="*" element={<Navigate to="/" replace />} />

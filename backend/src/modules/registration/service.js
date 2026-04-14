@@ -1,4 +1,6 @@
 const { getStripe } = require('../../config/stripe'); 
+const { uploadFile, uploadPDFBuffer } = require('../../config/cloudinary');
+const { generateReceiptPDF } = require('./receiptGenerator');
 const {
   callRegisterProc,
   confirmPaidRegistration,
@@ -8,8 +10,25 @@ const {
   getRegistrationsByEvent,
   getEventRegistrationConfig,
   cancelRegistration,
+  saveReceiptPDF,
 } = require('./queries');
 
+// ── Generate receipt PDF and upload to Cloudinary ────────────────────────────
+const generateAndUploadReceipt = async (registration_id) => {
+  try {
+    const reg = await getRegistrationById(registration_id);
+    if (!reg) throw new Error('Registration not found: ' + registration_id);
+
+    const pdfBuffer = await generateReceiptPDF(reg);
+    const uploaded  = await uploadPDFBuffer(pdfBuffer, 'receipts');
+
+    await saveReceiptPDF(registration_id, uploaded.secure_url, uploaded.public_id);
+    console.log('[Registration] Receipt generated for registration', registration_id);
+  } catch (err) {
+    // Non-fatal — log and continue so the user still gets their confirmation
+    console.error('[Registration] Receipt generation failed:', err.message);
+  }
+};
 
 // ── POST /api/registration/:event_id ─────────────────────────────────────────
 const register = async (req, res) => {
@@ -62,9 +81,11 @@ const register = async (req, res) => {
 
     const registration_id = out.registration_id;
 
-    // Free registration — done
+    // Free registration — generate receipt then respond
     if (config.registration_mode === 'free_registration') {
       const registration = await getRegistrationById(registration_id);
+      // Fire-and-forget receipt generation (non-blocking)
+      generateAndUploadReceipt(registration_id);
       return res.status(201).json({ success: true, message: 'Registration confirmed', data: { registration } });
     }
 
@@ -195,6 +216,9 @@ const handleWebhook = async (req, res) => {
       console.warn('[Registration] Webhook: no pending registration found for', session.id);
     } else {
       console.log('[Registration] Webhook: confirmed registration for session', session.id);
+      // Generate receipt PDF for paid registration (non-blocking)
+      const regId = Number(session.metadata.registration_id);
+      generateAndUploadReceipt(regId);
     }
   }
 

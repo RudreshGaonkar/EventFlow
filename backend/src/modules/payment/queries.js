@@ -73,6 +73,7 @@ const getTicketsByBooking = async (booking_id) => {
   const [rows] = await pool.execute(
     `SELECT
        t.ticket_id, t.ticket_uuid, t.entry_status, t.issued_at,
+       t.ticket_pdf_url,
        s.seat_label, st.tier_name,
        pe.title AS event_title, pe.poster_url,
        v.venue_name, c.city_name,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Ticket, CreditCard } from 'lucide-react';
+import { MapPin, Ticket, CreditCard, Download } from 'lucide-react';
 import api from '../../services/api';
 import { cancelBooking } from '../../services/booking';
 
@@ -35,6 +35,18 @@ export default function MyBookingsPage() {
       alert(err.response?.data?.message || 'Could not cancel booking');
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleDownloadTickets = async (bookingId) => {
+    try {
+      const tRes = await api.get(`/payment/tickets/${bookingId}`);
+      const tickets = tRes.data.data || [];
+      const pdfs = tickets.filter(t => t.ticket_pdf_url);
+      if (pdfs.length === 0) return alert('Ticket PDFs are not available yet. Try again later.');
+      pdfs.forEach((t, i) => setTimeout(() => window.open(t.ticket_pdf_url, '_blank'), i * 300));
+    } catch (err) {
+      alert('Failed to get ticket PDFs: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -107,7 +119,15 @@ export default function MyBookingsPage() {
                 </div>
 
                 {/* Cancel Action */}
-                <div className="hidden sm:flex items-center justify-center p-5">
+                <div className="hidden sm:flex items-center justify-center p-5 gap-2">
+                  {b.booking_status === 'Confirmed' && (
+                    <button
+                      onClick={() => handleDownloadTickets(b.booking_id)}
+                      className="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all"
+                    >
+                      <Download size={14} /> Download
+                    </button>
+                  )}
                   {canCancel && (
                     <button
                       onClick={() => handleCancel(b.booking_id)}
@@ -120,15 +140,25 @@ export default function MyBookingsPage() {
                 </div>
 
                 {/* Mobile Cancel */}
-                {canCancel && (
-                  <div className="sm:hidden px-5 pb-4">
-                    <button
-                      onClick={() => handleCancel(b.booking_id)}
-                      disabled={cancelling === b.booking_id}
-                      className="w-full text-xs font-bold px-4 py-2 rounded-xl border border-error/30 text-error hover:bg-error/10 hover:border-error/50 transition-all disabled:opacity-40"
-                    >
-                      {cancelling === b.booking_id ? 'Cancelling…' : 'Cancel Booking'}
-                    </button>
+                {(canCancel || b.booking_status === 'Confirmed') && (
+                  <div className="sm:hidden px-5 pb-4 flex flex-col gap-2">
+                    {b.booking_status === 'Confirmed' && (
+                      <button
+                        onClick={() => handleDownloadTickets(b.booking_id)}
+                        className="w-full flex items-center justify-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all"
+                      >
+                        <Download size={14} /> Download Tickets
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        onClick={() => handleCancel(b.booking_id)}
+                        disabled={cancelling === b.booking_id}
+                        className="w-full text-xs font-bold px-4 py-2 rounded-xl border border-error/30 text-error hover:bg-error/10 hover:border-error/50 transition-all disabled:opacity-40"
+                      >
+                        {cancelling === b.booking_id ? 'Cancelling…' : 'Cancel Booking'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

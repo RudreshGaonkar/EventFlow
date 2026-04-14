@@ -1,4 +1,5 @@
 const cloudinary = require('cloudinary').v2;
+const { Readable } = require('stream');
 
 let configured = false;
 
@@ -62,6 +63,40 @@ const uploadFile = async (fileSource, folder, publicId = null) => {
 };
 
 /**
+ * Upload a PDF buffer to Cloudinary as a raw file.
+ * Using upload_stream instead of base64 ensures the file is complete and
+ * resource_type 'raw' guarantees a /raw/upload/ URL the browser can download.
+ * @param {Buffer} buffer  - PDF buffer from pdfkit
+ * @param {string} folder  - Cloudinary folder name
+ * @returns {Promise<{secure_url: string, public_id: string}>}
+ */
+const uploadPDFBuffer = (buffer, folder) => {
+  return new Promise((resolve, reject) => {
+    const cloud = getCloudinary();
+
+    // Append .pdf to public_id so the URL ends in .pdf — required when
+    // resource_type is 'raw' (Cloudinary ignores the format option for raw files)
+    const public_id = folder + '/pdf_' + Date.now() + '.pdf';
+
+    const uploadStream = cloud.uploader.upload_stream(
+      { folder, resource_type: 'raw', public_id },
+      (error, result) => {
+        if (error) {
+          console.error('[Cloudinary] PDF stream upload failed:', error.message);
+          return reject(error);
+        }
+        resolve({ secure_url: result.secure_url, public_id: result.public_id });
+      }
+    );
+
+    const readable = new Readable();
+    readable.push(buffer);
+    readable.push(null); // signal end-of-stream
+    readable.pipe(uploadStream);
+  });
+};
+
+/**
  * Delete a file from Cloudinary using its public_id
  * @param {string} publicId - the public_id stored in DB
  */
@@ -78,5 +113,5 @@ const deleteFile = async (publicId) => {
   }
 };
 
-module.exports = { getCloudinary, uploadFile, deleteFile, configureCloudinary };
+module.exports = { getCloudinary, uploadFile, uploadPDFBuffer, deleteFile, configureCloudinary };
 

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { CheckCircle, Ticket, MapPin, Calendar } from 'lucide-react';
+import { CheckCircle, Ticket, MapPin, Calendar, Download } from 'lucide-react';
 import api from '../../services/api';
 
 const MAX_RETRIES = 6;
-const RETRY_DELAY = 2000; // 2s between retries — webhook usually fires in 2-4s
+const RETRY_DELAY = 2000; // 2s between retries—webhook usually fires in 2-4s
 
 export default function ConfirmPage() {
   const [params] = useSearchParams();
@@ -15,6 +15,12 @@ export default function ConfirmPage() {
   const [loading, setLoading]  = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState('');
+
+  const handleDownloadAll = () => {
+    const pdfs = tickets.filter(t => t.ticket_pdf_url);
+    if (pdfs.length === 0) return alert('Ticket PDFs are still being generated. Try again in a moment.');
+    pdfs.forEach((t, i) => setTimeout(() => window.open(t.ticket_pdf_url, '_blank'), i * 300));
+  };
 
   useEffect(() => {
     if (!booking_id) return;
@@ -136,6 +142,15 @@ export default function ConfirmPage() {
       )}
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        {tickets.some(t => t.ticket_pdf_url) && (
+          <button
+            onClick={handleDownloadAll}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 border border-primary/40
+              text-primary rounded-xl text-sm font-bold hover:bg-primary/10 transition-all"
+          >
+            <Download size={15} /> Download All Tickets
+          </button>
+        )}
         <Link to="/my-tickets"
           className="px-5 py-2.5 bg-primary text-on-primary rounded-xl text-sm
             font-bold text-center hover:opacity-90 transition-all">

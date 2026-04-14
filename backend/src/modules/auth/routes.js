@@ -3,8 +3,9 @@ const { body } = require('express-validator');
 const { authLimiter } = require('../../middleware/rateLimiter');
 const { protect } = require('../../middleware/authMiddleware');
 const { validate } = require('../../middleware/validate');
-const { registerUser, loginUser, logoutUser, getProfile, updateProfile } = require('./service');
-
+const { registerUser, loginUser, logoutUser, getProfile, updateProfile, getStates, changePassword, updateAvatar, getRoleRequestStatus, requestRole } = require('./service');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 // Register
 router.post(
   '/register',
@@ -47,6 +48,39 @@ router.patch(
   ],
   validate,
   updateProfile
+);
+
+// GET /auth/states
+router.get('/states', protect, getStates);
+
+// PATCH /auth/profile
+router.patch('/profile', protect,
+  body('fullname').optional().trim().notEmpty().isLength({ max: 100 }),
+  body('phone').optional().trim().isLength({ max: 15 }),
+  body('homestateid').optional({ nullable: true }).isInt({ min: 1 }),
+  validate,
+  updateProfile
+);
+
+// PATCH /auth/change-password
+router.patch('/change-password', protect,
+  body('currentPassword').notEmpty().withMessage('Current password required'),
+  body('newPassword').isLength({ min: 8 }).withMessage('Min 8 characters'),
+  validate,
+  changePassword
+);
+
+// PATCH /auth/avatar
+router.patch('/avatar', protect, upload.single('avatar'), updateAvatar);
+
+// GET /auth/role-request-status
+router.get('/role-request-status', protect, getRoleRequestStatus);
+
+// POST /auth/request-role
+router.post('/request-role', protect,
+  body('role').isIn(['Event Organizer', 'Venue Owner']),
+  validate,
+  requestRole
 );
 
 module.exports = router;

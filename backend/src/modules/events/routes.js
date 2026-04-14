@@ -10,7 +10,7 @@ const {
   getCast, addCast, removeCast,
   getSessions, addSession, editSessionMultiplier, editSessionStatus,
   getEventReviews, getSessionReviews, addReview,
-  browseSessions, editReview, getMyReviewHandler,
+  browseSessions, editReview, getMyReviewHandler, getMyAllReviews, getMyRegistrations,
 } = require('./service');
 
 // multer stores file temporarily in memory before Cloudinary upload
@@ -42,6 +42,8 @@ router.patch(
   validate,
   editReview
 );
+
+router.get('/registrations/my', protect, getMyRegistrations);
 
 router.get(
   '/:event_id',
@@ -242,5 +244,7 @@ router.post(
   validate,
   addReview
 );
+
+router.get('/reviews/my-all', protect, getMyAllReviews);
 
 module.exports = router;

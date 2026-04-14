@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Ticket, Calendar, MapPin, QrCode, CheckCircle, XCircle } from 'lucide-react';
+import { Ticket, Calendar, MapPin, QrCode, CheckCircle, XCircle, Download } from 'lucide-react';
 import api from '../../services/api';
 
 const STATUS_STYLE = {
@@ -104,7 +104,21 @@ export default function TicketsPage() {
                       <div className="relative z-10">
                         <div className="flex justify-between items-start mb-4">
                           <h4 className="font-extrabold text-lg leading-tight truncate pr-4">{booking.event_title}</h4>
-                          <Ticket size={24} className="opacity-80 shrink-0" />
+                          <div className="flex items-center gap-2 shrink-0">
+                            {ticket.ticket_pdf_url && (
+                              <a
+                                href={ticket.ticket_pdf_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Download Ticket PDF"
+                                onClick={e => e.stopPropagation()}
+                                className="opacity-70 hover:opacity-100 transition-opacity"
+                              >
+                                <Download size={16} className="text-on-primary" />
+                              </a>
+                            )}
+                            <Ticket size={24} className="opacity-80" />
+                          </div>
                         </div>
                         <div className="space-y-2 text-xs font-medium text-on-primary/95">
                           <p className="flex items-center gap-2 drop-shadow-md">

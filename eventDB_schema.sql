@@ -225,13 +225,15 @@ CREATE TABLE event_sessions (
 -- 9. REVIEWS
 -- =============================================================================
 CREATE TABLE reviews (
-  review_id   INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-  user_id     INT UNSIGNED     NOT NULL,
-  event_id    INT UNSIGNED     NULL,
-  session_id  INT UNSIGNED     NULL,
+  review_id   INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id     INT UNSIGNED NOT NULL,
+  event_id    INT UNSIGNED NULL,
+  session_id  INT UNSIGNED NULL,
   rating      TINYINT UNSIGNED NOT NULL,
-  review_text TEXT             NULL,
-  created_at  TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  review_text TEXT NULL,
+  edit_count  TINYINT UNSIGNED NOT NULL DEFAULT 0,        -- ← NEW
+  updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- ← NEW
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (review_id),
   UNIQUE KEY uq_user_event_review   (user_id, event_id),

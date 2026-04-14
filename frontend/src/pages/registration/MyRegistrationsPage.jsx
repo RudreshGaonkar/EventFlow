@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Users, User, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, MapPin, Users, User, Clock, Download } from 'lucide-react';
 import { getMyRegistrations, cancelRegistration } from '../../services/registration';
 
 const STATUS_STYLE = {
-  confirmed:  'bg-success/10 text-success border border-success/20',
-  pending:    'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
-  cancelled:  'bg-error/10 text-error border border-error/20',
-  refunded:   'bg-surface-container-highest text-on-surface-variant border border-outline-variant',
+  confirmed: 'bg-success/10 text-success border border-success/20',
+  pending: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  cancelled: 'bg-error/10 text-error border border-error/20',
+  refunded: 'bg-surface-container-highest text-on-surface-variant border border-outline-variant',
 };
 
 export default function MyRegistrationsPage() {
-  const [regs,     setRegs]     = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [regs, setRegs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(null);
 
   const load = () => {
@@ -55,7 +56,7 @@ export default function MyRegistrationsPage() {
 
       {regs.length === 0 ? (
         <div className="flex flex-col items-center py-20 text-center bg-surface-container border border-outline-variant rounded-2xl">
-          <span className="text-5xl mb-4">📋</span>
+          {/* <span className="text-5xl mb-4">📋</span> */}
           <p className="text-on-surface font-semibold text-lg">No registrations yet</p>
           <p className="text-sm text-on-surface-variant mt-1">Browse tech fests, workshops &amp; more</p>
           <Link to="/"
@@ -74,7 +75,7 @@ export default function MyRegistrationsPage() {
             return (
               <div key={reg.registration_id}
                 className="group flex flex-col sm:flex-row bg-surface-container border border-outline-variant rounded-2xl overflow-hidden hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300">
-                
+
                 {/* Date Block */}
                 <div className="sm:w-24 bg-surface-container-highest flex flex-row sm:flex-col items-center justify-center p-4 border-b sm:border-b-0 sm:border-r border-outline-variant group-hover:bg-primary/10 transition-colors">
                   <span className="text-sm font-bold text-primary uppercase tracking-wider mr-2 sm:mr-0">{month}</span>
@@ -128,8 +129,15 @@ export default function MyRegistrationsPage() {
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex gap-2 w-full sm:w-auto justify-end">
+                      {reg.status.toLowerCase() === 'confirmed' && reg.receipt_pdf_url && (
+                        <button
+                          onClick={() => window.open(reg.receipt_pdf_url, '_blank')}
+                          className="flex items-center gap-1.5 text-xs font-bold w-full sm:w-auto px-4 py-2 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 transition-all justify-center">
+                          <Download size={14} /> Download Receipt
+                        </button>
+                      )}
                       {['confirmed', 'pending'].includes(reg.status.toLowerCase()) && (
                         <button
                           onClick={() => handleCancel(reg.registration_id)}

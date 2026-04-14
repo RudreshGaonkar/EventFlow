@@ -141,17 +141,30 @@ export default function RegistrationConfirmPage() {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
-          <Link to="/my-registrations"
-            className="flex-1 py-3 rounded-xl border border-outline-variant text-sm font-semibold
-              text-on-surface text-center hover:bg-surface-container transition-all">
-            My Registrations
-          </Link>
-          <Link to="/"
-            className="flex-1 py-3 rounded-xl bg-primary text-on-primary text-sm font-semibold
-              text-center hover:bg-primary-container transition-all shadow-lg shadow-primary/20">
-            Browse Events
-          </Link>
+        <div className="flex flex-col gap-3">
+          {reg.receipt_pdf_url && (
+            <a
+              href={reg.receipt_pdf_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-xl border border-primary/40 text-primary text-sm font-semibold
+                text-center flex items-center justify-center gap-2 hover:bg-primary/10 transition-all"
+            >
+              <Download size={15} /> Download Receipt
+            </a>
+          )}
+          <div className="flex gap-3">
+            <Link to="/my-registrations"
+              className="flex-1 py-3 rounded-xl border border-outline-variant text-sm font-semibold
+                text-on-surface text-center hover:bg-surface-container transition-all">
+              My Registrations
+            </Link>
+            <Link to="/"
+              className="flex-1 py-3 rounded-xl bg-primary text-on-primary text-sm font-semibold
+                text-center hover:bg-primary-container transition-all shadow-lg shadow-primary/20">
+              Browse Events
+            </Link>
+          </div>
         </div>
       </div>
     </div>

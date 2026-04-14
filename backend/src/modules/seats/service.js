@@ -129,7 +129,7 @@ const initSessionSeats = async (session_id, venue_id) => {
 const cleanupExpiredLocks = async () => {
   try {
     // First find which sessions have expired locks (to bust their cache)
-    const pool = require('../config/db').getPool();
+    const pool = require('../../config/db').getPool();
     const [sessions] = await pool.execute(
       `SELECT DISTINCT session_id FROM session_seats
        WHERE status = 'Locked' AND locked_until < NOW()`

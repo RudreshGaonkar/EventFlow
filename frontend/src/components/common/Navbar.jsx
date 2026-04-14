@@ -141,6 +141,7 @@ export default function Navbar() {
                     {[
                       { icon: BookOpen, label: 'My Bookings',      to: '/my-bookings'      },
                       { icon: Users,    label: 'My Registrations', to: '/my-registrations' },
+                      { icon: Ticket,   label: 'My Tickets',       to: '/my-tickets'       },
                       { icon: User,     label: 'Profile',          to: '/profile'          },
                     ].map(({ icon: Icon, label, to }) => (
                       <Link key={to} to={to}
@@ -207,6 +208,7 @@ export default function Navbar() {
                   {[
                     { label: 'My Bookings',      to: '/my-bookings'      },
                     { label: 'My Registrations', to: '/my-registrations' },
+                    { label: 'My Tickets',       to: '/my-tickets'       },
                     { label: 'Profile',          to: '/profile'          },
                     ...(hasRole('System Admin')    ? [{ label: 'Admin Panel',         to: '/admin'       }] : []),
                     ...(hasRole('Event Organizer') ? [{ label: 'Organizer Dashboard', to: '/organizer'   }] : []),

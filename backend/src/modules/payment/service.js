@@ -1,4 +1,5 @@
 const { getStripe } = require('../../config/stripe');
+const { generateAndUploadTickets } = require('../tickets/service');
 const {
   callConfirmBooking,
   getBookingByStripeSession,
@@ -55,6 +56,10 @@ const handleWebhook = async (req, res) => {
 
         if (result.result_code === 0) {
           console.log(`[Webhook] Booking ${booking_id} confirmed`);
+          // Fire-and-forget PDF generation — non-blocking so webhook responds fast
+          generateAndUploadTickets(booking_id).catch(err =>
+            console.error('[Webhook] Ticket PDF generation failed for booking', booking_id, '—', err.message)
+          );
         } else {
           console.error(`[Webhook] confirm_booking SP failed for ${booking_id}:`, result.result_msg);
         }

@@ -67,6 +67,7 @@ const getRegistrationById = async (registration_id) => {
        er.team_size,
        er.amount_paid,
        er.registered_at,
+       er.receipt_pdf_url,
        pe.title             AS event_title,
        pe.registration_mode,
        pe.participation_type,
@@ -100,6 +101,7 @@ const getRegistrationsByUser = async (user_id) => {
        er.team_size,
        er.amount_paid,
        er.registered_at,
+       er.receipt_pdf_url,
        pe.title             AS event_title,
        pe.poster_url,
        pe.registration_mode,
@@ -182,6 +184,18 @@ const cancelRegistration = async (registration_id, user_id) => {
   return result.affectedRows;
 };
 
+// ── Save receipt PDF url after Cloudinary upload ─────────────────────────────
+const saveReceiptPDF = async (registration_id, receipt_pdf_url, receipt_public_id) => {
+  const pool = getPool();
+  await pool.execute(
+    `UPDATE event_registrations
+     SET    receipt_pdf_url   = ?,
+            receipt_public_id = ?
+     WHERE  registration_id   = ?`,
+    [receipt_pdf_url, receipt_public_id, registration_id]
+  );
+};
+
 module.exports = {
   callRegisterProc,
   confirmPaidRegistration,
@@ -191,4 +205,5 @@ module.exports = {
   getRegistrationsByEvent,
   getEventRegistrationConfig,
   cancelRegistration,
+  saveReceiptPDF,
 };
