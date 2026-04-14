@@ -317,9 +317,9 @@ const getReviewsByEvent = async (eventid) => {
     const [rows] = await pool.execute(
       `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
               r.rating, r.review_text, r.edit_count, r.created_at,
-              u.fullname
+              u.full_name
        FROM reviews r
-       JOIN users u ON r.user_id = u.userid
+       JOIN users u ON r.user_id = u.user_id
        WHERE r.event_id = ?
        ORDER BY r.created_at DESC`,
       [eventid]
@@ -334,9 +334,9 @@ const getReviewsBySession = async (sessionid) => {
     const [rows] = await pool.execute(
       `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
               r.rating, r.review_text, r.edit_count, r.created_at,
-              u.fullname
+              u.full_name
        FROM reviews r
-       JOIN users u ON r.user_id = u.userid
+       JOIN users u ON r.user_id = u.user_id
        WHERE r.session_id = ?
        ORDER BY r.created_at DESC`,
       [sessionid]

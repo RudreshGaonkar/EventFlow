@@ -1,5 +1,7 @@
 const { getStripe } = require('../../config/stripe');
-const { generateAndUploadTickets } = require('../tickets/service');
+const { generateAndUploadTickets }     = require('../tickets/service');
+const { generateAndUploadReceipt }     = require('../registration/service');
+const { confirmPaidRegistration }       = require('../registration/queries');
 const {
   callConfirmBooking,
   getBookingByStripeSession,
@@ -32,11 +34,38 @@ const handleWebhook = async (req, res) => {
     switch (event.type) {
 
       case 'checkout.session.completed': {
-        const session = event.data.object;
-        const booking_id = parseInt(session.metadata?.booking_id);
+        const session  = event.data.object;
+        const metaType = session.metadata?.type;
 
         console.log('[Webhook] checkout.session.completed — metadata:', session.metadata);
-        console.log('[Webhook] Parsed booking_id:', booking_id, '| payment_intent:', session.payment_intent);
+        console.log('[Webhook] Detected metadata.type:', metaType || '(none — treating as booking)');
+
+        // ── ROUTE 1: Registration Payment ────────────────────────────────────
+        if (metaType === 'registration') {
+          const registration_id = parseInt(session.metadata?.registration_id);
+          console.log('[Webhook] ➔ Registration route — registration_id:', registration_id);
+
+          if (!registration_id) {
+            console.warn('[Webhook] No registration_id in metadata — skipping');
+            break;
+          }
+
+          const affected = await confirmPaidRegistration(session.id, session.amount_total / 100);
+          if (!affected) {
+            console.warn('[Webhook] confirmPaidRegistration: no pending registration found for session', session.id);
+          } else {
+            console.log(`[Webhook] Registration ${registration_id} confirmed`);
+            // Fire-and-forget receipt generation — non-blocking
+            generateAndUploadReceipt(registration_id).catch(err =>
+              console.error('[Webhook] Receipt generation failed for registration', registration_id, '—', err.message)
+            );
+          }
+          break;
+        }
+
+        // ── ROUTE 2: Seat Booking Payment (default) ───────────────────────────
+        const booking_id = parseInt(session.metadata?.booking_id);
+        console.log('[Webhook] ➔ Booking route — booking_id:', booking_id, '| payment_intent:', session.payment_intent);
         console.log('[Webhook] amount_total:', session.amount_total, '| divided:', session.amount_total / 100);
 
         if (!booking_id) {
@@ -47,8 +76,8 @@ const handleWebhook = async (req, res) => {
         console.log('[Webhook] Calling callConfirmBooking...');
         const result = await callConfirmBooking(
           booking_id,
-          session.payment_intent,   // stripe_payment_intent_id
-          sig,                      // stripe_signature
+          session.payment_intent,
+          sig,
           session.amount_total / 100
         );
 
@@ -56,7 +85,7 @@ const handleWebhook = async (req, res) => {
 
         if (result.result_code === 0) {
           console.log(`[Webhook] Booking ${booking_id} confirmed`);
-          // Fire-and-forget PDF generation — non-blocking so webhook responds fast
+          // Fire-and-forget PDF generation — non-blocking
           generateAndUploadTickets(booking_id).catch(err =>
             console.error('[Webhook] Ticket PDF generation failed for booking', booking_id, '—', err.message)
           );

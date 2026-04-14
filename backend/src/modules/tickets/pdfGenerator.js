@@ -55,7 +55,7 @@ const generateTicketPDF = (ticket) => {
       doc.fontSize(11).font('Helvetica-Bold').text('Ticket Info');
       doc.font('Helvetica');
       doc.text('Ticket ID: ' + ticket.ticket_id);
-      doc.text('QR Code  : ' + ticket.qr_code);
+      doc.text('UUID     : ' + ticket.ticket_uuid);
 
       doc.moveDown(1);
 

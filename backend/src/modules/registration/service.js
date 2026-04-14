@@ -238,6 +238,7 @@ const handleWebhook = async (req, res) => {
 
 
 module.exports = {
+  generateAndUploadReceipt,
   register,
   getMyRegistrations,
   getRegistration,
