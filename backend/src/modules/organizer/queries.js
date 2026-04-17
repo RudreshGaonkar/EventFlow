@@ -103,6 +103,43 @@ const insertSession = async (event_id, organizer_id, fields) => {
     );
     if (!check.length) throw new Error('FORBIDDEN');
 
+    // Construct JS Date to let mysql2 serialize timezone-correctly
+    const targetDateTimeString = `${fields.show_date}T${fields.show_time}:00`;
+    const sessionTimestamp = new Date(targetDateTimeString);
+    console.log(`[DEBUG] Validating Venue: ${fields.venue_id} for Organizer: ${organizer_id}`);
+    console.log(`[DEBUG] Input: show_date=${fields.show_date} show_time=${fields.show_time}`);
+    console.log(`[DEBUG] Constructed JS Date: ${sessionTimestamp.toISOString()}`);
+
+    const [venueCheck] = await conn.query(
+      `SELECT v.venue_id, v.owner_id, vr.request_id, vr.start_time, vr.end_time
+       FROM venues v
+       LEFT JOIN venue_rental_requests vr 
+         ON vr.venue_id = v.venue_id 
+         AND vr.organizer_id = ? 
+         AND vr.status = 'Accepted'
+         AND ? >= vr.start_time 
+         AND ? <= vr.end_time
+       WHERE v.venue_id = ?
+         AND (v.owner_id = ? OR vr.request_id IS NOT NULL)
+       LIMIT 1`,
+      [
+        organizer_id,
+        sessionTimestamp,
+        sessionTimestamp,
+        fields.venue_id,
+        organizer_id
+      ]
+    );
+
+    if (venueCheck.length > 0) {
+      console.log(`[DEBUG] Permission GRANTED via: ${Number(venueCheck[0].owner_id) === Number(organizer_id) ? 'Ownership' : 'Accepted Rental #' + venueCheck[0].request_id}`);
+      console.log(`[DEBUG] Rental Window: ${venueCheck[0].start_time} → ${venueCheck[0].end_time}`);
+    } else {
+      console.log(`[DEBUG] Permission DENIED: No matching ownership or accepted rental for venue ${fields.venue_id} at ${sessionTimestamp.toISOString()}`);
+    }
+
+    if (!venueCheck.length) throw new Error('VENUE_FORBIDDEN');
+
     const [[{ seatCount }]] = await conn.query(
       `SELECT COUNT(*) AS seatCount FROM seats WHERE venue_id = ? AND is_active = 1`,
       [fields.venue_id]
@@ -170,15 +207,21 @@ const setSessionMultiplier = async (session_id, organizer_id, multiplier) => {
   );
 };
 
-const findAllVenues = async () => {
+const findPermittedVenues = async (organizer_id) => {
   const [rows] = await getPool().query(
-    `SELECT v.venue_id, v.venue_name, v.address, v.total_capacity,
+    `SELECT DISTINCT v.venue_id, v.venue_name, v.address, v.total_capacity,
             c.city_name, s.state_name
      FROM venues v
      JOIN cities c ON c.city_id = v.city_id
      JOIN states s ON s.state_id = c.state_id
+     LEFT JOIN venue_rental_requests vr 
+       ON vr.venue_id = v.venue_id 
+       AND vr.organizer_id = ? 
+       AND vr.status = 'Accepted'
      WHERE v.is_active = 1
-     ORDER BY s.state_name, c.city_name, v.venue_name`
+       AND (v.owner_id = ? OR vr.request_id IS NOT NULL)
+     ORDER BY s.state_name, c.city_name, v.venue_name`,
+     [organizer_id, organizer_id]
   );
   return rows;
 };
@@ -254,6 +297,6 @@ const deleteCastMember = async (event_person_id, organizer_id) => {
 module.exports = {
   findMyEvents, insertEvent, modifyEvent, softDeleteEvent,
   findMySessionsByEvent, insertSession, setSessionStatus, setSessionMultiplier,
-  findAllVenues, findAllPeople, insertPerson, modifyPerson,
+  findPermittedVenues, findAllPeople, insertPerson, modifyPerson,
   findCastByEvent, insertCastMember, deleteCastMember,
 };

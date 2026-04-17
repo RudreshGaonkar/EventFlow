@@ -7,7 +7,7 @@ import AdminTable from '../../../components/common/AdminTable';
 import AdminModal from '../../../components/common/AdminModal';
 import AdminField from '../../../components/common/AdminField';
 
-const BLANK = { city_id: '', venue_name: '', address: '', total_capacity: '' };
+const BLANK = { city_id: '', venue_name: '', address: '', total_capacity: '', is_rentable: false };
 const SEAT_BLANK = { tier_id: '1', seat_row: '', seat_count: '10' };
 
 const STATUS_COLORS = {
@@ -49,7 +49,7 @@ export default function VenueOwnerVenuesTab() {
 
   const openAdd  = () => { setForm(BLANK); setModal({ mode: 'add' }); };
   const openEdit = (v) => {
-    setForm({ city_id: v.city_id, venue_name: v.venue_name, address: v.address || '', total_capacity: v.total_capacity });
+    setForm({ city_id: v.city_id, venue_name: v.venue_name, address: v.address || '', total_capacity: v.total_capacity, is_rentable: !!v.is_rentable });
     setModal({ mode: 'edit', data: v });
   };
 
@@ -166,6 +166,24 @@ export default function VenueOwnerVenuesTab() {
           onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Full address" />
         <AdminField label="Total Capacity *" type="number" value={form.total_capacity}
           onChange={e => setForm(f => ({ ...f, total_capacity: e.target.value }))} placeholder="e.g. 500" />
+        
+        <div className="flex items-center justify-between px-1 py-1 mt-2 mb-2">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">
+            List as Rentable
+          </label>
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, is_rentable: !f.is_rentable }))}
+            className={`relative w-11 h-6 rounded-full transition-colors duration-200
+              ${form.is_rentable ? 'bg-primary' : 'bg-surface-container-highest'}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow
+                transition-transform duration-200
+                ${form.is_rentable ? 'translate-x-5' : 'translate-x-0'}`}
+            />
+          </button>
+        </div>
       </AdminModal>
 
       {/* Seat Management Panel */}

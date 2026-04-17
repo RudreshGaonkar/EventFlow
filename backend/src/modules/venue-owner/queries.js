@@ -15,9 +15,9 @@ const findVenuesByOwner = async (owner_id) => {
 
 const insertVenue = async (owner_id, fields) => {
   const [r] = await getPool().query(
-    `INSERT INTO venues (city_id, owner_id, venue_name, address, total_capacity, status, is_active)
-     VALUES (?, ?, ?, ?, ?, 'Pending', 0)`,
-    [fields.city_id, owner_id, fields.venue_name, fields.address || null, fields.total_capacity]
+    `INSERT INTO venues (city_id, owner_id, venue_name, address, total_capacity, is_rentable, status, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, 'Pending', 0)`,
+    [fields.city_id, owner_id, fields.venue_name, fields.address || null, fields.total_capacity, fields.is_rentable ? 1 : 0]
   );
   return r.insertId;
 };
@@ -29,7 +29,7 @@ const modifyVenue = async (venue_id, owner_id, fields) => {
   );
   if (!check.length) throw new Error('FORBIDDEN');
 
-  const allowed = ['venue_name', 'address', 'total_capacity', 'city_id'];
+  const allowed = ['venue_name', 'address', 'total_capacity', 'city_id', 'is_rentable'];
   const cols = [], vals = [];
   for (const k of allowed) {
     if (fields[k] !== undefined) { cols.push(`${k} = ?`); vals.push(fields[k]); }

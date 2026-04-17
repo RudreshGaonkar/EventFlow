@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Building2, Users } from 'lucide-react';
+import { Building2, Users, CalendarClock } from 'lucide-react';
 import VenueOwnerVenuesTab from './tabs/VenueOwnerVenuesTab';
 import VenueOwnerStaffTab  from './tabs/VenueOwnerStaffTab';
+import RentalRequestList from '../../components/venue-owner/RentalRequestList';
 
 const TABS = [
+  { key: 'requests', label: 'Rental Requests', icon: CalendarClock },
   { key: 'venues', label: 'My Venues', icon: Building2 },
   { key: 'staff',  label: 'Staff',     icon: Users     },
 ];
@@ -37,6 +39,7 @@ export default function VenueOwnerPage() {
         </div>
 
         <div className="bg-surface-container rounded-3xl p-6">
+          {activeTab === 'requests' && <RentalRequestList />}
           {activeTab === 'venues' && <VenueOwnerVenuesTab />}
           {activeTab === 'staff'  && <VenueOwnerStaffTab  />}
         </div>

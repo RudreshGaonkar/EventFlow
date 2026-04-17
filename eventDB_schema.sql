@@ -104,12 +104,36 @@ CREATE TABLE venues (
   address        VARCHAR(300)      NULL,
   total_capacity SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   is_active      BOOLEAN           NOT NULL DEFAULT TRUE,
+  is_rentable    BOOLEAN           NOT NULL DEFAULT FALSE,
   status         ENUM('Pending','Active','Inactive') NOT NULL DEFAULT 'Active',
 
   PRIMARY KEY (venue_id),
   KEY idx_venue_city (city_id),
   CONSTRAINT fk_venue_city  FOREIGN KEY (city_id)  REFERENCES cities (city_id)  ON UPDATE CASCADE,
   CONSTRAINT fk_venue_owner FOREIGN KEY (owner_id) REFERENCES users  (user_id)
+) ENGINE=InnoDB;
+
+-- =============================================================================
+-- 5b. VENUE RENTAL REQUESTS
+-- =============================================================================
+CREATE TABLE venue_rental_requests (
+  request_id      INT UNSIGNED      NOT NULL AUTO_INCREMENT,
+  organizer_id    INT UNSIGNED      NOT NULL,
+  venue_id        SMALLINT UNSIGNED NOT NULL,
+  start_time      DATETIME          NOT NULL,
+  end_time        DATETIME          NOT NULL,
+  event_name      VARCHAR(200)      NULL,        -- Optional context for the owner
+  status          ENUM('Pending','Accepted','Rejected','Cancelled') NOT NULL DEFAULT 'Pending',
+  created_at      TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (request_id),
+  KEY idx_vr_organizer (organizer_id),
+  KEY idx_vr_venue     (venue_id),
+  KEY idx_vr_status    (status),
+  CONSTRAINT fk_vr_organizer FOREIGN KEY (organizer_id) REFERENCES users  (user_id),
+  CONSTRAINT fk_vr_venue     FOREIGN KEY (venue_id)     REFERENCES venues (venue_id) ON DELETE CASCADE,
+  CONSTRAINT chk_rental_time CHECK (end_time > start_time)
 ) ENGINE=InnoDB;
 
 -- Deferred FK: users → states, users → roles

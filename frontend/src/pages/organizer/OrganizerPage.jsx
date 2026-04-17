@@ -4,8 +4,10 @@ import OrganizerEventsTab   from './tabs/OrganizerEventsTab';
 import OrganizerSessionsTab from './tabs/OrganizerSessionsTab';
 import OrganizerCastTab     from './tabs/OrganizerCastTab';
 import OrganizerStaffTab    from './tabs/OrganizerStaffTab';
+import MyRentalRequests     from '../../components/organizer/MyRentalRequests';
 
 const TABS = [
+  { key: 'requests', label: 'Rental Requests', icon: CalendarClock },
   { key: 'events',   label: 'My Events',  icon: CalendarDays  },
   { key: 'sessions', label: 'Sessions',   icon: CalendarClock },
   { key: 'cast',     label: 'Cast & Crew', icon: Users        },
@@ -41,6 +43,7 @@ export default function OrganizerPage() {
         </div>
 
         <div className="bg-surface-container rounded-3xl p-6">
+          {activeTab === 'requests' && <MyRentalRequests />}
           {activeTab === 'events'   && <OrganizerEventsTab   />}
           {activeTab === 'sessions' && <OrganizerSessionsTab />}
           {activeTab === 'cast'     && <OrganizerCastTab     />}

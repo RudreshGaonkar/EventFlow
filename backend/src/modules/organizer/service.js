@@ -4,7 +4,7 @@ const {
   findMySessionsByEvent, insertSession, setSessionStatus, setSessionMultiplier,
   findAllPeople, insertPerson, modifyPerson,
   findCastByEvent, insertCastMember, deleteCastMember,
-  findAllVenues,
+  findPermittedVenues,
 } = require('./queries');
 
 // ── Cloudinary helper ─────────────────────────────────────────────────────────
@@ -154,6 +154,8 @@ const createSession = async (req, res) => {
   } catch (err) {
     if (err.message === 'FORBIDDEN')
       return res.status(403).json({ success: false, message: 'Not your event' });
+    if (err.message === 'VENUE_FORBIDDEN')
+      return res.status(403).json({ success: false, message: 'You do not have permission to use this venue at this time.' });
     console.error('[Organizer] createSession:', err.message);
     return res.status(500).json({ success: false, message: 'Could not create session' });
   }
@@ -187,7 +189,7 @@ const updateMultiplier = async (req, res) => {
 
 const getVenues = async (req, res) => {
   try {
-    const venues = await findAllVenues();
+    const venues = await findPermittedVenues(req.user.user_id);
     return res.status(200).json({ success: true, data: venues });
   } catch (err) {
     console.error('[Organizer] getVenues:', err.message);

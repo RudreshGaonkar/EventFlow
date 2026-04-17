@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CalendarClock } from 'lucide-react';
 import { getMyEvents, getMySessions, createMySession, updateSessionStatus, updateSessionMultiplier } from '../../../services/organizer';
 import { getVenues } from '../../../services/organizer';
@@ -37,6 +38,8 @@ export default function OrganizerSessionsTab() {
   const [form, setForm]         = useState(BLANK);
   const [saving, setSaving]     = useState(false);
   const { showToast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // ── derive selected event object for conditional fields ──────────────────
   const selectedEvent = events.find(e => String(e.event_id) === String(selEvent));
@@ -59,6 +62,28 @@ export default function OrganizerSessionsTab() {
       .catch(() => showToast('Failed to load sessions', 'error'))
       .finally(() => setLoading(false));
   }, [selEvent]);
+
+  useEffect(() => {
+    if (location.state?.prefill && events.length > 0 && venues.length > 0) {
+      const { title, venue_id } = location.state.prefill;
+      let matchedEventId = '';
+
+      if (title) {
+        const foundEvent = events.find(e => e.title.toLowerCase() === title.toLowerCase());
+        if (foundEvent) {
+          setSelEvent(foundEvent.event_id);
+          matchedEventId = foundEvent.event_id;
+        }
+      }
+
+      if (venue_id) {
+        setForm(f => ({ ...f, venue_id: String(venue_id) }));
+        if (matchedEventId) setModal(true); // only auto-open if event is selected
+      }
+
+      navigate('.', { replace: true, state: {} });
+    }
+  }, [location.state, events, venues, navigate]);
 
   const reload = () => {
     if (!selEvent) return;

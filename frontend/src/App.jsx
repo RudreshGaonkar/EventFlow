@@ -37,6 +37,7 @@ import AdminPage from './pages/admin/AdminPage';
 import StaffPage from './pages/staff/StaffPage';
 import ScannerPage from './pages/staff/ScannerPage';
 import OrganizerPage from './pages/organizer/OrganizerPage';
+import VenueFinderPage from './pages/organizer/VenueFinderPage';
 import VenueOwnerPage from './pages/venue-owner/VenueOwnerPage';
 
 // Pages that hide the Navbar
@@ -141,6 +142,11 @@ export default function App() {
           {/* ── Organizer ── */}
           <Route path="/organizer" element={
             <RoleGuard roles={['Event Organizer']}><OrganizerPage /></RoleGuard>
+          } />
+
+          {/* ── Venue Finder (Organizer) ── */}
+          <Route path="/venue-finder" element={
+            <RoleGuard roles={['Event Organizer']}><VenueFinderPage /></RoleGuard>
           } />
 
           {/* ── Venue Owner ── */}

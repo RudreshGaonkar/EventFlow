@@ -41,6 +41,7 @@ app.use('/api/venue-owner', require('./src/modules/venue-owner/routes'));
 app.use('/api/browse', require('./src/modules/browse/routes'));
 app.use('/api/registration', require('./src/modules/registration/routes'));
 app.use('/api/locations', require('./src/modules/locations/routes'));
+app.use('/api/rental',   require('./src/modules/rental/routes'));
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 const { updateSessionStatuses } = require('./src/jobs/sessionStatusUpdater');
