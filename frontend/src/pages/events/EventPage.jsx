@@ -34,17 +34,24 @@ const formatDuration = (mins) => {
 
 // ── Session Card (booking events) ─────────────────────────────────────────────
 
-function SessionCard({ session, onSelect }) {
+function SessionCard({ session, onSelect, listingDaysAhead }) {
   const available = session.available_seats;
   const pct = session.total_seats > 0
     ? Math.round((session.booked_seats / session.total_seats) * 100) : 0;
   const isFull = available === 0;
   const isHot = pct >= 60 && !isFull;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const showDate = new Date(session.show_date);
+  showDate.setHours(0, 0, 0, 0);
+  const daysDiff = Math.round((showDate - today) / (1000 * 60 * 60 * 24));
+  const isOpen = daysDiff <= listingDaysAhead;
+
   return (
     <button
-      onClick={() => !isFull && onSelect(session)}
-      disabled={isFull}
+      onClick={() => !isFull && isOpen && onSelect(session)}
+      disabled={isFull || !isOpen}
       className={`w-full text-left p-4 rounded-2xl border transition-all
         ${isFull
           ? 'bg-surface-container/50 border-outline-variant/30 opacity-50 cursor-not-allowed'
@@ -84,6 +91,12 @@ function SessionCard({ session, onSelect }) {
       {isFull ? (
         <div className="pt-3 border-t border-outline-variant/30 text-center">
           <span className="text-xs text-error/70 font-semibold">Housefull</span>
+        </div>
+      ) : !isOpen ? (
+        <div className="pt-3 border-t border-outline-variant/30 text-center">
+          <span className="text-xs text-on-surface-variant font-medium">
+            Opens in {daysDiff - listingDaysAhead} day{daysDiff - listingDaysAhead !== 1 ? 's' : ''}
+          </span>
         </div>
       ) : (
         <div className="pt-3 border-t border-outline-variant/30 flex items-center justify-between">
@@ -156,13 +169,20 @@ function RegistrationBanner({ event, onRegister }) {
 
 // ── Sub-session Card (registration events) ────────────────────────────────────
 
-function SubSessionCard({ session, onSubRegister }) {
+function SubSessionCard({ session, onSubRegister, listingDaysAhead }) {
   const needsReg = session.requires_registration;
   const isFull = session.session_max_participants !== null &&
     session.session_registered >= session.session_max_participants;
   const spotsLeft = session.session_max_participants
     ? session.session_max_participants - (session.session_registered || 0)
     : null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const showDate = new Date(session.show_date);
+  showDate.setHours(0, 0, 0, 0);
+  const daysDiff = Math.round((showDate - today) / (1000 * 60 * 60 * 24));
+  const isOpen = daysDiff <= listingDaysAhead;
 
   return (
     <div className="w-full text-left p-4 rounded-2xl border bg-surface-container border-outline-variant transition-all">
@@ -176,7 +196,11 @@ function SubSessionCard({ session, onSubRegister }) {
           </span>
         </div>
         {needsReg ? (
-          isFull ? (
+          !isOpen ? (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container-highest text-on-surface-variant border border-outline-variant">
+              Opens in {daysDiff - listingDaysAhead} day{daysDiff - listingDaysAhead !== 1 ? 's' : ''}
+            </span>
+          ) : isFull ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-error/10 text-error border border-error/20">
               Full
             </span>
@@ -570,7 +594,12 @@ export default function EventPage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {citySessions.map(s => (
-                                <SessionCard key={s.session_id} session={s} onSelect={handleSelect} />
+                                <SessionCard 
+                                  key={s.session_id} 
+                                  session={s} 
+                                  onSelect={handleSelect} 
+                                  listingDaysAhead={event.listing_days_ahead}
+                                />
                               ))}
                             </div>
                           </div>
@@ -584,6 +613,7 @@ export default function EventPage() {
                           key={s.session_id}
                           session={s}
                           onSubRegister={handleSubSessionRegister}
+                          listingDaysAhead={event.listing_days_ahead}
                         />
                       ))}
                     </div>

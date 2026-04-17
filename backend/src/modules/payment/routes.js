@@ -1,12 +1,12 @@
 const router  = require('express').Router();
-const { protect }        = require('../../middleware/authMiddleware');
-const { allowRoles }     = require('../../middleware/roleMiddleware');
-const { handleWebhook, getBookingTickets } = require('./service');
+const { protect }    = require('../../middleware/authMiddleware');
+const { allowRoles } = require('../../middleware/roleMiddleware');
+const { verifyPayment, getBookingTickets } = require('./service');
 
-// ⚠️ Webhook — raw body already applied in app.js for this path
-router.post('/webhook', handleWebhook);
+// ── POST /api/payment/verify — Razorpay synchronous signature verification ─────
+router.post('/verify', protect, verifyPayment);
 
-// Get tickets for a confirmed booking
+// ── GET /api/payment/tickets/:booking_id ──────────────────────────────────────
 router.get(
   '/tickets/:booking_id',
   protect,

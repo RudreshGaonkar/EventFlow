@@ -2,26 +2,28 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, CalendarDays, MapPin, Building2,
-  Map, Users, ChevronRight, Menu, X,UserCog
+  Map, Users, ChevronRight, Menu, X, UserCog, Shield
 } from 'lucide-react';
 
 
-import StatesTab   from './tabs/StatesTab';
-import CitiesTab   from './tabs/CitiesTab';
-import VenuesTab   from './tabs/VenuesTab';
-import EventsTab   from './tabs/EventsTab';
-import SessionsTab from './tabs/SessionsTab';
-import UsersTab    from './tabs/UsersTab';
-import StaffTab from './tabs/StaffTab';
+import StatesTab       from './tabs/StatesTab';
+import CitiesTab       from './tabs/CitiesTab';
+import VenuesTab       from './tabs/VenuesTab';
+import EventsTab       from './tabs/EventsTab';
+import SessionsTab     from './tabs/SessionsTab';
+import UsersTab        from './tabs/UsersTab';
+import StaffTab        from './tabs/StaffTab';
+import RoleRequestsTab from './tabs/RoleRequestsTab';
 
 const TABS = [
-  { key: 'events',   label: 'Events',   icon: LayoutDashboard },
-  { key: 'sessions', label: 'Sessions', icon: CalendarDays    },
-  { key: 'venues',   label: 'Venues',   icon: Building2       },
-  { key: 'cities',   label: 'Cities',   icon: Map             },
-  { key: 'states',   label: 'States',   icon: MapPin          },
-  { key: 'users',    label: 'Users',    icon: Users           },
-    { key: 'staff',    label: 'Staff',    icon: UserCog },
+  { key: 'events',        label: 'Events',        icon: LayoutDashboard },
+  { key: 'sessions',      label: 'Sessions',      icon: CalendarDays    },
+  { key: 'venues',        label: 'Venues',        icon: Building2       },
+  { key: 'cities',        label: 'Cities',        icon: Map             },
+  { key: 'states',        label: 'States',        icon: MapPin          },
+  { key: 'users',         label: 'Users',         icon: Users           },
+  { key: 'staff',         label: 'Staff',         icon: UserCog         },
+  { key: 'roleRequests',  label: 'Role Requests', icon: Shield          },
 ];
 
 export default function AdminPage() {
@@ -29,13 +31,14 @@ export default function AdminPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const ActiveTab = {
-    events:   EventsTab,
-    sessions: SessionsTab,
-    venues:   VenuesTab,
-    cities:   CitiesTab,
-    states:   StatesTab,
-    users:    UsersTab,
-   staff:    StaffTab,
+    events:        EventsTab,
+    sessions:      SessionsTab,
+    venues:        VenuesTab,
+    cities:        CitiesTab,
+    states:        StatesTab,
+    users:         UsersTab,
+    staff:         StaffTab,
+    roleRequests:  RoleRequestsTab,
   }[active];
 
   return (

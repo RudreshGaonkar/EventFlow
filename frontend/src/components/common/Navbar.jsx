@@ -56,6 +56,13 @@ export default function Navbar() {
 
         {/* Desktop Right */}
         <div className="hidden md:flex items-center gap-3">
+          
+          <Link to="/"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+              text-on-surface-variant hover:text-white transition-all"
+          >
+            Browse
+          </Link>
 
           {hasRole('System Admin') && (
             <Link to="/admin"
@@ -206,6 +213,7 @@ export default function Navbar() {
                   </div>
 
                   {[
+                    { label: 'Browse Events',    to: '/'                 },
                     { label: 'My Bookings',      to: '/my-bookings'      },
                     { label: 'My Registrations', to: '/my-registrations' },
                     { label: 'My Tickets',       to: '/my-tickets'       },

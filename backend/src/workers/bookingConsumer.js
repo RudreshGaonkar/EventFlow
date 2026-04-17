@@ -1,7 +1,7 @@
-const { getClient }  = require('../config/redis');
-const { getStripe }  = require('../config/stripe');
+const { getClient }     = require('../config/redis');
+const { getRazorpay }   = require('../config/razorpay');
 const {
-  callBookSeats, getBookingById, updateStripeSessionId,
+  callBookSeats, getBookingById, updateRazorpayOrderId,
 } = require('../modules/booking/queries');
 
 const QUEUE_KEY = 'booking:queue';
@@ -38,35 +38,23 @@ async function processJob(job) {
     throw new Error(`SP error: ${result.result_msg}`);
   }
 
-  // 2. Fetch booking & create Stripe Checkout Session
-  const booking = await getBookingById(result.booking_id);
-  const stripe  = getStripe();
+  // 2. Fetch booking & create Razorpay Order
+  const booking  = await getBookingById(result.booking_id);
+  const razorpay = getRazorpay();
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    mode: 'payment',
-    line_items: [{
-      price_data: {
-        currency:     'inr',
-        product_data: {
-          name:        booking.event_title,
-          description: `${booking.venue_name} • ${new Date(booking.show_date).toDateString()} ${booking.show_time}`,
-        },
-        unit_amount: Math.round(booking.total_amount * 100),
-      },
-      quantity: 1,
-    }],
-    metadata: {
+  const order = await razorpay.orders.create({
+    amount:   Math.round(booking.total_amount * 100), // paise
+    currency: 'INR',
+    receipt:  `booking_${result.booking_id}`,
+    notes: {
       booking_id: String(result.booking_id),
       user_id:    String(user_id),
+      event:      booking.event_title,
     },
-    success_url: `${process.env.CLIENT_URL}/booking/confirm?booking_id=${result.booking_id}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:  `${process.env.CLIENT_URL}/booking/cancel?booking_id=${result.booking_id}`,
-    expires_at:  Math.floor(Date.now() / 1000) + 30 * 60,
   });
 
-  // 3. Persist Stripe session ID on booking row
-  await updateStripeSessionId(result.booking_id, checkoutSession.id);
+  // 3. Persist Razorpay order ID on booking row
+  await updateRazorpayOrderId(result.booking_id, order.id);
 
   // 4. Mark job as done — frontend polls this
   await setJobResult(redis, job_id, {
@@ -74,16 +62,17 @@ async function processJob(job) {
     data: {
       booking_id:             result.booking_id,
       total_amount:           booking.total_amount,
-      stripe_session_id:      checkoutSession.id,
-      checkout_url:           checkoutSession.url,
-      stripe_publishable_key: process.env.STRIPE_PUBLISHABLE_KEY,
+      razorpay_order_id:      order.id,
+      razorpay_key:           process.env.RAZORPAY_TEST_KEY,
+      event_title:            booking.event_title,
+      description:            `${booking.venue_name} • ${new Date(booking.show_date).toDateString()} ${booking.show_time}`,
     },
   });
 
   // 5. Clean up idempotency key — job is done, allow fresh attempts
   if (idem_key) await redis.del(idem_key);
 
-  console.log(`[BookingWorker] Job ${job_id} done — booking #${result.booking_id}`);
+  console.log(`[BookingWorker] Job ${job_id} done — booking #${result.booking_id} — Razorpay order ${order.id}`);
 }
 
 // ── Main worker loop ──────────────────────────────────────────────────────────

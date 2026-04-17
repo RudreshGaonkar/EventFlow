@@ -78,7 +78,13 @@ router.get('/role-request-status', protect, getRoleRequestStatus);
 
 // POST /auth/request-role
 router.post('/request-role', protect,
-  body('role').isIn(['Event Organizer', 'Venue Owner']),
+  upload.fields([{ name: 'id_proof', maxCount: 1 }, { name: 'photo', maxCount: 1 }]),
+  [
+    body('role').isIn(['Event Organizer', 'Venue Owner']).withMessage('Invalid role requested'),
+    body('venue_name').if(body('role').equals('Venue Owner')).trim().notEmpty().withMessage('Venue name is required for Venue Owner'),
+    body('city_id').if(body('role').equals('Venue Owner')).isInt({ min: 1 }).withMessage('Valid city ID is required for Venue Owner'),
+    body('address').if(body('role').equals('Venue Owner')).trim().notEmpty().withMessage('Address is required for Venue Owner')
+  ],
   validate,
   requestRole
 );

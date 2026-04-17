@@ -27,28 +27,42 @@ const callRegisterProc = async ({
   return out;
 };
 
-// ── Confirm paid registration after Stripe webhook ───────────────────────────
-const confirmPaidRegistration = async (stripe_session_id, amount_paid) => {
+// ── Confirm paid registration after Razorpay verify ─────────────────────────
+const confirmPaidRegistration = async (razorpay_order_id, amount_paid) => {
   const pool = getPool();
   const [result] = await pool.execute(
     `UPDATE event_registrations
      SET    status            = 'Confirmed',
             amount_paid       = ?,
-            stripe_session_id = ?
-     WHERE  stripe_session_id = ? AND status = 'Pending'`,
-    [amount_paid, stripe_session_id, stripe_session_id]
+            razorpay_order_id = ?
+     WHERE  razorpay_order_id = ? AND status = 'Pending'`,
+    [amount_paid, razorpay_order_id, razorpay_order_id]
   );
   return result.affectedRows;
 };
 
-// ── Save stripe session id after checkout created ────────────────────────────
-const saveStripeSession = async (registration_id, stripe_session_id) => {
+// ── Confirm paid registration by registration_id (sync verify flow) ───────────
+const confirmPaidRegistrationById = async (registration_id, razorpay_order_id, amount_paid) => {
+  const pool = getPool();
+  const [result] = await pool.execute(
+    `UPDATE event_registrations
+     SET    status            = 'Confirmed',
+            amount_paid       = ?,
+            razorpay_order_id = ?
+     WHERE  registration_id   = ? AND status = 'Pending'`,
+    [amount_paid, razorpay_order_id, registration_id]
+  );
+  return result.affectedRows;
+};
+
+// ── Save Razorpay order id after order is created ─────────────────────────────
+const saveRazorpayOrder = async (registration_id, razorpay_order_id) => {
   const pool = getPool();
   await pool.execute(
     `UPDATE event_registrations
-     SET    stripe_session_id = ?
+     SET    razorpay_order_id = ?
      WHERE  registration_id   = ?`,
-    [stripe_session_id, registration_id]
+    [razorpay_order_id, registration_id]
   );
 };
 
@@ -199,7 +213,8 @@ const saveReceiptPDF = async (registration_id, receipt_pdf_url, receipt_public_i
 module.exports = {
   callRegisterProc,
   confirmPaidRegistration,
-  saveStripeSession,
+  confirmPaidRegistrationById,
+  saveRazorpayOrder,
   getRegistrationById,
   getRegistrationsByUser,
   getRegistrationsByEvent,

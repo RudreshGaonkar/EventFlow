@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 
 
@@ -21,12 +21,29 @@ const BOOK_LABEL = {
 export default function SeatsPage() {
   const { session_id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [seats,    setSeats]    = useState([]);
   const [selected, setSelected] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [jobState, setJobState] = useState('idle'); // idle | queued | processing | redirecting
   const [error,    setError]    = useState('');
+
+  const event = location.state?.event;
+  const session = location.state?.session;
+  
+  let isOpen = true;
+  let daysDiff = 0;
+  let listingDaysAhead = session?.listing_days_ahead || event?.listing_days_ahead || 5;
+
+  if (session?.show_date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const showDate = new Date(session.show_date);
+    showDate.setHours(0, 0, 0, 0);
+    daysDiff = Math.round((showDate - today) / (1000 * 60 * 60 * 24));
+    isOpen = daysDiff <= listingDaysAhead;
+  }
 
   const pollRef = useRef(null); // holds the setInterval id
 
@@ -44,7 +61,7 @@ export default function SeatsPage() {
   }, [session_id]);
 
   const toggle = (seat) => {
-    if (seat.status !== 'Available') return;
+    if (seat.status !== 'Available' || !isOpen) return;
     setSelected(prev =>
       prev.includes(seat.session_seat_id)
         ? prev.filter(id => id !== seat.session_seat_id)
@@ -65,8 +82,40 @@ export default function SeatsPage() {
 
         if (job.status === 'done') {
           clearInterval(pollRef.current);
-          setJobState('redirecting');
-          window.location.href = job.data.checkout_url;
+          setJobState('idle'); // clear UI block
+
+          const options = {
+            key: job.data.razorpay_key,
+            amount: job.data.total_amount * 100, // paise
+            currency: 'INR',
+            name: 'EventFlow',
+            description: job.data.description,
+            order_id: job.data.razorpay_order_id,
+            handler: async function (response) {
+              try {
+                // Verify signature on backend
+                await api.post('/payment/verify', {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  booking_id: job.data.booking_id,
+                  amount: job.data.total_amount
+                });
+                navigate(`/booking/confirm?booking_id=${job.data.booking_id}`);
+              } catch (err) {
+                setError('Payment verification failed');
+              }
+            },
+            theme: { color: "#6750A4" },
+            modal: {
+              ondismiss: function() {
+                setError('Payment cancelled. Your seats will be released shortly.');
+              }
+            }
+          };
+
+          const rzp = new window.Razorpay(options);
+          rzp.open();
         }
 
         if (job.status === 'failed') {
@@ -107,7 +156,7 @@ export default function SeatsPage() {
     return acc;
   }, {});
 
-  const isbusy = jobState !== 'idle';
+  const isbusy = jobState !== 'idle' || !isOpen;
 
   if (loading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -118,6 +167,15 @@ export default function SeatsPage() {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6 text-on-surface">Select Seats</h1>
+
+      {!isOpen && (
+        <div className="mb-6 p-4 bg-surface-container-highest border border-outline-variant rounded-xl text-center">
+          <p className="text-on-surface font-semibold text-lg">Booking Not Open Yet</p>
+          <p className="text-on-surface-variant text-sm mt-1">
+            Outside {listingDaysAhead}-day booking window.
+          </p>
+        </div>
+      )}
 
       {error && <p className="mb-4 text-error text-sm">{error}</p>}
 

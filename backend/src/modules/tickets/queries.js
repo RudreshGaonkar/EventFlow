@@ -9,13 +9,14 @@ const getTicketsByBooking = async (booking_id) => {
          t.ticket_id, t.ticket_uuid, t.entry_status, t.issued_at, t.ticket_pdf_url,
          s.seat_label, 
          st.tier_name, 
-         st.base_price AS price_paid, 
+         ROUND(b.total_amount / b.num_seats, 2) AS price_paid,
          pe.title AS event_title, 
          v.venue_name, 
          c.city_name,
          es.show_date, 
          es.show_time
        FROM tickets t 
+       JOIN bookings b              ON t.booking_id = b.booking_id
        JOIN session_seats ss         ON t.session_seat_id = ss.session_seat_id 
        JOIN seats s                  ON ss.seat_id = s.seat_id 
        JOIN seat_tiers st            ON s.tier_id = st.tier_id 
@@ -38,7 +39,21 @@ const getTicketById = async (ticket_id) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT t.*, s.seat_label, st.tier_name, b.user_id, b.session_id, es.show_date, es.show_time, pe.title AS event_title, v.venue_name, c.city_name FROM tickets t JOIN bookings b ON t.booking_id = b.booking_id JOIN session_seats ss ON t.session_seat_id = ss.session_seat_id JOIN seats s ON ss.seat_id = s.seat_id JOIN seat_tiers st ON s.tier_id = st.tier_id JOIN event_sessions es ON b.session_id = es.session_id JOIN parent_events pe ON es.event_id = pe.event_id JOIN venues v ON es.venue_id = v.venue_id JOIN cities c ON v.city_id = c.city_id WHERE t.ticket_id = ?',
+      `SELECT t.*, s.seat_label, st.tier_name,
+        ROUND(b.total_amount / b.num_seats, 2) AS price_paid,
+        b.user_id, b.session_id,
+        es.show_date, es.show_time,
+        pe.title AS event_title, v.venue_name, c.city_name
+        FROM tickets t
+        JOIN bookings b ON t.booking_id = b.booking_id
+        JOIN session_seats ss ON t.session_seat_id = ss.session_seat_id
+        JOIN seats s ON ss.seat_id = s.seat_id
+        JOIN seat_tiers st ON s.tier_id = st.tier_id
+        JOIN event_sessions es ON b.session_id = es.session_id
+        JOIN parent_events pe ON es.event_id = pe.event_id
+        JOIN venues v ON es.venue_id = v.venue_id
+        JOIN cities c ON v.city_id = c.city_id
+        WHERE t.ticket_id = ?`,
       [ticket_id]
     );
     return rows[0] || null;

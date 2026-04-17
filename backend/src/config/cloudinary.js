@@ -113,5 +113,33 @@ const deleteFile = async (publicId) => {
   }
 };
 
-module.exports = { getCloudinary, uploadFile, uploadPDFBuffer, deleteFile, configureCloudinary };
+/**
+ * Upload an image buffer to Cloudinary using upload_stream.
+ * @param {Buffer} buffer  - Image buffer from multer
+ * @param {string} folder  - Cloudinary folder name
+ * @returns {Promise<{secure_url: string, public_id: string}>}
+ */
+const uploadImageBuffer = (buffer, folder) => {
+  return new Promise((resolve, reject) => {
+    const cloud = getCloudinary();
+
+    const uploadStream = cloud.uploader.upload_stream(
+      { folder, resource_type: 'image' },
+      (error, result) => {
+        if (error) {
+          console.error('[Cloudinary] Image stream upload failed:', error.message);
+          return reject(error);
+        }
+        resolve({ secure_url: result.secure_url, public_id: result.public_id });
+      }
+    );
+
+    const readable = new Readable();
+    readable.push(buffer);
+    readable.push(null);
+    readable.pipe(uploadStream);
+  });
+};
+
+module.exports = { getCloudinary, uploadFile, uploadPDFBuffer, uploadImageBuffer, deleteFile, configureCloudinary };
 

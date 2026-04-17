@@ -1,6 +1,7 @@
 const { getClient }  = require('../../config/redis');
 const { getStripe }  = require('../../config/stripe');
 const { randomUUID } = require('crypto');
+const { getPool }    = require('../../config/db');
 const {
   getBookingById, getBookingsByUser,
   getBookingSeats, cancelBooking,
@@ -16,6 +17,33 @@ const createBooking = async (req, res) => {
     const { session_id, seat_ids } = req.body;
     const user_id = req.user.user_id;
     const redis   = getClient();
+    const pool    = getPool();
+
+    // 0. Pre-booking verification: Is the booking window open?
+    const [sessionData] = await pool.execute(`
+      SELECT 
+        es.show_date, 
+        pe.listing_days_ahead,
+        DATEDIFF(es.show_date, CURDATE()) as days_until_show
+      FROM event_sessions es
+      JOIN parent_events pe ON pe.event_id = es.event_id
+      WHERE es.session_id = ?
+    `, [session_id]);
+
+    if (!sessionData.length) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    if (sessionData[0].days_until_show > sessionData[0].listing_days_ahead) {
+      const maxDays = sessionData[0].listing_days_ahead;
+      return res.status(400).json({ 
+        success: false,
+        data: {
+          status: 'failed',
+          message: `Outside ${maxDays}-day booking window`
+        }
+      });
+    }
 
     // 1. Idempotency guard — block duplicate rapid submissions
     const seatHash = seat_ids.slice().sort((a, b) => a - b).join('-');

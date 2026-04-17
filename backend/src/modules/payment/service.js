@@ -1,134 +1,107 @@
-const { getStripe } = require('../../config/stripe');
-const { generateAndUploadTickets }     = require('../tickets/service');
-const { generateAndUploadReceipt }     = require('../registration/service');
-const { confirmPaidRegistration }       = require('../registration/queries');
+const crypto = require('crypto');
+const { generateAndUploadTickets }   = require('../tickets/service');
+const { generateAndUploadReceipt }   = require('../registration/service');
+const { confirmPaidRegistrationById } = require('../registration/queries');
 const {
   callConfirmBooking,
-  getBookingByStripeSession,
+  getBookingByRazorpayOrder,
   markBookingFailed,
   getTicketsByBooking,
 } = require('./queries');
 
-// ── Stripe Webhook ────────────────────────────────────────────────────────────
-const handleWebhook = async (req, res) => {
-  console.log('[Webhook] ──── Webhook received ────');
-  console.log('[Webhook] Body type:', typeof req.body, '| Buffer?', Buffer.isBuffer(req.body));
+// ── POST /api/payment/verify (Razorpay synchronous verification) ───────────────
+const verifyPayment = async (req, res) => {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    booking_id,         // sent by frontend from job poll result
+    registration_id,    // set for paid-registration flow
+    amount,
+  } = req.body;
 
-  const stripe = getStripe();
-  const sig = req.headers['stripe-signature'];
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  console.log('[Webhook] Signature header present:', !!sig);
-  console.log('[Webhook] Secret starts with:', secret?.slice(0, 10) + '...');
-
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, secret);
-    console.log('[Webhook] Signature verified — event type:', event.type);
-  } catch (err) {
-    console.error('[Webhook] Signature FAILED:', err.message);
-    return res.status(400).json({ success: false, message: 'Webhook signature invalid' });
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ success: false, message: 'Missing Razorpay parameters' });
   }
 
+  // ── HMAC SHA-256 Signature Verification ──────────────────────────────────────
+  const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_SECRET_KEY);
+  hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+  const generated = hmac.digest('hex');
+
+  if (generated !== razorpay_signature) {
+    console.error('[Payment] Razorpay signature mismatch for order', razorpay_order_id);
+    return res.status(400).json({ success: false, message: 'Payment verification failed — invalid signature' });
+  }
+
+  console.log('[Payment] Signature verified for order', razorpay_order_id);
+
   try {
-    switch (event.type) {
-
-      case 'checkout.session.completed': {
-        const session  = event.data.object;
-        const metaType = session.metadata?.type;
-
-        console.log('[Webhook] checkout.session.completed — metadata:', session.metadata);
-        console.log('[Webhook] Detected metadata.type:', metaType || '(none — treating as booking)');
-
-        // ── ROUTE 1: Registration Payment ────────────────────────────────────
-        if (metaType === 'registration') {
-          const registration_id = parseInt(session.metadata?.registration_id);
-          console.log('[Webhook] ➔ Registration route — registration_id:', registration_id);
-
-          if (!registration_id) {
-            console.warn('[Webhook] No registration_id in metadata — skipping');
-            break;
-          }
-
-          const affected = await confirmPaidRegistration(session.id, session.amount_total / 100);
-          if (!affected) {
-            console.warn('[Webhook] confirmPaidRegistration: no pending registration found for session', session.id);
-          } else {
-            console.log(`[Webhook] Registration ${registration_id} confirmed`);
-            // Fire-and-forget receipt generation — non-blocking
-            generateAndUploadReceipt(registration_id).catch(err =>
-              console.error('[Webhook] Receipt generation failed for registration', registration_id, '—', err.message)
-            );
-          }
-          break;
-        }
-
-        // ── ROUTE 2: Seat Booking Payment (default) ───────────────────────────
-        const booking_id = parseInt(session.metadata?.booking_id);
-        console.log('[Webhook] ➔ Booking route — booking_id:', booking_id, '| payment_intent:', session.payment_intent);
-        console.log('[Webhook] amount_total:', session.amount_total, '| divided:', session.amount_total / 100);
-
-        if (!booking_id) {
-          console.warn('[Webhook] No booking_id in metadata — skipping');
-          break;
-        }
-
-        console.log('[Webhook] Calling callConfirmBooking...');
-        const result = await callConfirmBooking(
-          booking_id,
-          session.payment_intent,
-          sig,
-          session.amount_total / 100
-        );
-
-        console.log('[Webhook] callConfirmBooking returned:', result);
-
-        if (result.result_code === 0) {
-          console.log(`[Webhook] Booking ${booking_id} confirmed`);
-          // Fire-and-forget PDF generation — non-blocking
-          generateAndUploadTickets(booking_id).catch(err =>
-            console.error('[Webhook] Ticket PDF generation failed for booking', booking_id, '—', err.message)
-          );
-        } else {
-          console.error(`[Webhook] confirm_booking SP failed for ${booking_id}:`, result.result_msg);
-        }
-        break;
+    // ── ROUTE 1: Paid Registration ────────────────────────────────────────────
+    if (registration_id) {
+      const affected = await confirmPaidRegistrationById(
+        registration_id,
+        razorpay_order_id,
+        Number(amount)
+      );
+      if (!affected) {
+        return res.status(404).json({ success: false, message: 'Pending registration not found' });
       }
-
-      case 'checkout.session.expired': {
-        const session = event.data.object;
-        const booking_id = parseInt(session.metadata?.booking_id);
-
-        console.log('[Webhook] checkout.session.expired — booking_id:', booking_id);
-
-        if (!booking_id) break;
-
-        await markBookingFailed(booking_id);
-        console.log(`[Webhook] Booking ${booking_id} expired — seats released`);
-        break;
-      }
-
-      default:
-        console.log('[Webhook] Unhandled event type:', event.type);
-        break;
+      console.log(`[Payment] Registration #${registration_id} confirmed`);
+      // Fire-and-forget receipt generation
+      generateAndUploadReceipt(Number(registration_id)).catch(err =>
+        console.error('[Payment] Receipt generation failed:', err.message)
+      );
+      return res.status(200).json({
+        success: true,
+        message: 'Registration payment confirmed',
+        data: { registration_id },
+      });
     }
 
-    return res.status(200).json({ received: true });
+    // ── ROUTE 2: Seat Booking ─────────────────────────────────────────────────
+    if (!booking_id) {
+      return res.status(400).json({ success: false, message: 'booking_id or registration_id is required' });
+    }
+
+    const result = await callConfirmBooking(
+      Number(booking_id),
+      razorpay_payment_id,
+      razorpay_signature,
+      Number(amount)
+    );
+
+    if (result.result_code !== 0) {
+      console.error(`[Payment] confirm_booking SP failed for booking #${booking_id}:`, result.result_msg);
+      return res.status(500).json({ success: false, message: result.result_msg });
+    }
+
+    console.log(`[Payment] Booking #${booking_id} confirmed`);
+    // Fire-and-forget ticket generation
+    generateAndUploadTickets(Number(booking_id)).catch(err =>
+      console.error('[Payment] Ticket generation failed:', err.message)
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Payment confirmed — tickets are being generated',
+      data: { booking_id },
+    });
 
   } catch (err) {
-    console.error('[Webhook] Handler error:', err.message, err.stack);
-    return res.status(500).json({ success: false, message: 'Webhook processing failed' });
+    console.error('[Payment] verifyPayment error:', err.message);
+    return res.status(500).json({ success: false, message: 'Payment processing failed' });
   }
 };
 
-// ── Get tickets for a confirmed booking (called from frontend) ─────────────────
+// ── GET /api/payment/tickets/:booking_id ──────────────────────────────────────
 const getBookingTickets = async (req, res) => {
   try {
     const { booking_id } = req.params;
 
-    // Only owner can fetch their tickets
-    const booking = await getBookingByStripeSession(
-      req.query.stripe_session_id || ''
+    // Verify the booking belongs to the requesting user
+    const booking = await getBookingByRazorpayOrder(
+      req.query.razorpay_order_id || ''
     );
 
     const tickets = await getTicketsByBooking(booking_id);
@@ -144,4 +117,4 @@ const getBookingTickets = async (req, res) => {
   }
 };
 
-module.exports = { handleWebhook, getBookingTickets };
+module.exports = { verifyPayment, getBookingTickets };

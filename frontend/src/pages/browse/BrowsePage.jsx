@@ -153,17 +153,28 @@ function EventCard({ event }) {
           </div>
         )}
 
+        {/* Coming Soon badge */}
+        {!event.next_show && (
+          <div className="absolute inset-0 flex items-end justify-center pb-3 pointer-events-none">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold
+              bg-black/60 backdrop-blur-sm text-amber-400 border border-amber-400/30
+              tracking-wide">✦ Coming Soon</span>
+          </div>
+        )}
+
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <p className="text-white font-semibold text-xs leading-tight truncate">{event.title}</p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[10px] text-on-surface-variant">
               {event.language || event.event_type}
             </span>
-            {event.next_show && (
+            {event.next_show ? (
               <span className="flex items-center gap-0.5 text-[9px] text-on-surface-variant">
                 <Clock size={8} />
                 {new Date(event.next_show).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               </span>
+            ) : (
+              <span className="text-[9px] text-amber-400 font-semibold">TBA</span>
             )}
           </div>
         </div>
@@ -412,12 +423,12 @@ export default function BrowsePage() {
     : allEvents;
 
   // Categorised rows
-  const movies    = filtered.filter(e => e.event_type === 'Movie');
-  const concerts  = filtered.filter(e => e.event_type === 'Concert');
-  const plays     = filtered.filter(e => e.event_type === 'Play');
-  const techFests = filtered.filter(e => e.event_type === 'Tech Fest');
-  const workshops = filtered.filter(e => e.event_type === 'Workshop');
-  const sports    = filtered.filter(e => e.event_type === 'Sport');
+  const movies    = filtered.filter(e => e.event_type?.toLowerCase() === 'movie');
+  const concerts  = filtered.filter(e => e.event_type?.toLowerCase() === 'concert');
+  const plays     = filtered.filter(e => e.event_type?.toLowerCase() === 'play');
+  const techFests = filtered.filter(e => e.event_type?.toLowerCase() === 'tech fest');
+  const workshops = filtered.filter(e => e.event_type?.toLowerCase() === 'workshop');
+  const sports    = filtered.filter(e => e.event_type?.toLowerCase() === 'sport');
 
   // Cities for selected state
   const stateCities = selectedState

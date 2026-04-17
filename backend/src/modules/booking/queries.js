@@ -142,15 +142,15 @@ const cancelExpiredBookings = async () => {
 };
 
 // Update razorpay_order_id on booking after Razorpay order is created
-const updateStripeSessionId = async (booking_id, stripe_session_id) => {
+const updateRazorpayOrderId = async (booking_id, razorpay_order_id) => {
   try {
     const pool = getPool();
     await pool.execute(
-      'UPDATE bookings SET stripe_session_id = ? WHERE booking_id = ?',
-      [stripe_session_id, booking_id]
+      'UPDATE bookings SET razorpay_order_id = ? WHERE booking_id = ?',
+      [razorpay_order_id, booking_id]
     );
   } catch (err) {
-    throw new Error('DB error in updateStripeSessionId: ' + err.message);
+    throw new Error('DB error in updateRazorpayOrderId: ' + err.message);
   }
 };
 
@@ -208,5 +208,5 @@ module.exports = {
   getBookingSeats,
   cancelBooking,
   cancelExpiredBookings,
-  updateStripeSessionId, getSessionWithSeats, 
+  updateRazorpayOrderId, getSessionWithSeats,
 };

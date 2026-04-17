@@ -1,10 +1,10 @@
-const { getStripe } = require('../../config/stripe'); 
+const { getRazorpay } = require('../../config/razorpay');
 const { uploadFile, uploadPDFBuffer } = require('../../config/cloudinary');
 const { generateReceiptPDF } = require('./receiptGenerator');
 const {
   callRegisterProc,
   confirmPaidRegistration,
-  saveStripeSession,
+  saveRazorpayOrder,
   getRegistrationById,
   getRegistrationsByUser,
   getRegistrationsByEvent,
@@ -89,43 +89,32 @@ const register = async (req, res) => {
       return res.status(201).json({ success: true, message: 'Registration confirmed', data: { registration } });
     }
 
-    // Paid registration — create Stripe checkout
-    const stripe = getStripe(); // ✅ get instance here
-    const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [{
-        price_data: {
-          currency: 'inr',
-          unit_amount: Math.round(Number(config.registration_fee) * 100),
-          product_data: {
-            name: `Registration — ${config.title}`,
-            description: team_name
-              ? `Team: ${team_name} (${team_size} members)`
-              : `Participant: ${participant_type}`,
-          },
-        },
-        quantity: 1,
-      }],
-      metadata: {
-        type: 'registration',
+    // Paid registration — create Razorpay order
+    const razorpay = getRazorpay();
+    const order = await razorpay.orders.create({
+      amount:   Math.round(Number(config.registration_fee) * 100), // paise
+      currency: 'INR',
+      receipt:  `reg_${registration_id}`,
+      notes: {
+        type:            'registration',
         registration_id: String(registration_id),
-        event_id: String(event_id),
-        user_id: String(req.user.user_id),
+        event_id:        String(event_id),
+        user_id:         String(req.user.user_id),
       },
-      success_url: `${CLIENT_URL}/registration/confirm?registration_id=${registration_id}`,
-      cancel_url:  `${CLIENT_URL}/registration/cancel?registration_id=${registration_id}`,
-      expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // ✅ 30 min minimum
     });
 
-    await saveStripeSession(registration_id, stripeSession.id);
+    await saveRazorpayOrder(registration_id, order.id);
 
     return res.status(201).json({
       success: true,
       message: 'Registration created — proceed to payment',
-      data: { registration_id, checkout_url: stripeSession.url },
+      data: {
+        registration_id,
+        razorpay_order_id: order.id,
+        razorpay_key:      process.env.RAZORPAY_TEST_KEY,
+        amount:            Math.round(Number(config.registration_fee) * 100),
+        event_title:       config.title,
+      },
     });
 
   } catch (err) {
@@ -190,53 +179,6 @@ const cancelReg = async (req, res) => {
 };
 
 
-// ── POST /api/registration/webhook (Stripe) ───────────────────────────────────
-const handleWebhook = async (req, res) => {
-  const stripe = getStripe(); // ✅ get instance here too
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    console.error('[Registration] Webhook signature failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    if (session.metadata?.type !== 'registration') return res.sendStatus(200);
-
-    const affected = await confirmPaidRegistration(session.id, session.amount_total / 100);
-    if (!affected) {
-      console.warn('[Registration] Webhook: no pending registration found for', session.id);
-    } else {
-      console.log('[Registration] Webhook: confirmed registration for session', session.id);
-      // Generate receipt PDF for paid registration (non-blocking)
-      const regId = Number(session.metadata.registration_id);
-      generateAndUploadReceipt(regId);
-    }
-  }
-
-  if (event.type === 'checkout.session.expired') {
-    const session = event.data.object;
-    if (session.metadata?.type === 'registration') {
-      await cancelRegistration(
-        Number(session.metadata.registration_id),
-        Number(session.metadata.user_id)
-      );
-      console.log('[Registration] Webhook: expired — cancelled registration', session.metadata.registration_id);
-    }
-  }
-
-  return res.sendStatus(200);
-};
-
-
 module.exports = {
   generateAndUploadReceipt,
   register,
@@ -244,5 +186,4 @@ module.exports = {
   getRegistration,
   getEventRegistrations,
   cancelReg,
-  handleWebhook,
-};
+};

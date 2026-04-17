@@ -311,9 +311,9 @@ CREATE TABLE bookings (
   subtotal_amount  DECIMAL(10,2) NOT NULL,
   tax_amount       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   total_amount     DECIMAL(10,2) NOT NULL,
-  booking_status   ENUM('Pending','Confirmed','Cancelled','Refunded') NOT NULL DEFAULT 'Pending',
-  stripe_session_id VARCHAR(100) NULL,
-  booked_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  booking_status    ENUM('Pending','Confirmed','Cancelled','Refunded') NOT NULL DEFAULT 'Pending',
+  razorpay_order_id VARCHAR(100) NULL,
+  booked_at         TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   PRIMARY KEY (booking_id),
@@ -368,9 +368,9 @@ CREATE TABLE payments (
   booking_id               INT UNSIGNED  NOT NULL,
   amount                   DECIMAL(10,2) NOT NULL,
   currency                 CHAR(3)       NOT NULL DEFAULT 'INR',
-  payment_method           VARCHAR(50)   NULL,
-  stripe_payment_intent_id VARCHAR(100)  NULL,
-  stripe_signature         VARCHAR(255)  NULL,
+  payment_method            VARCHAR(50)   NULL,
+  razorpay_payment_id       VARCHAR(100)  NULL,
+  razorpay_signature        VARCHAR(512)  NULL,
   payment_status           ENUM('Initiated','Success','Failed','Refunded') NOT NULL DEFAULT 'Initiated',
   paid_at                  TIMESTAMP     NULL,
   created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -426,19 +426,23 @@ CREATE TABLE event_registrations (
   team_size        TINYINT UNSIGNED NULL,
 
   -- Payment (only for paid_registration)
-  stripe_session_id VARCHAR(100) NULL,
+  razorpay_order_id VARCHAR(100) NULL,
   amount_paid       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+
+  -- Receipt / PDF (generated after paid_registration confirmation)
+  receipt_pdf_url   VARCHAR(500) NULL,
+  receipt_public_id VARCHAR(255) NULL,
 
   registered_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   PRIMARY KEY (registration_id),
   UNIQUE KEY uq_user_event_reg (user_id, event_id, session_id),
-  KEY idx_reg_event   (event_id),
-  KEY idx_reg_session (session_id),
-  KEY idx_reg_user    (user_id),
-  KEY idx_reg_status  (status),
-  KEY idx_reg_stripe  (stripe_session_id),
+  KEY idx_reg_event      (event_id),
+  KEY idx_reg_session    (session_id),
+  KEY idx_reg_user       (user_id),
+  KEY idx_reg_status     (status),
+  KEY idx_reg_razorpay   (razorpay_order_id),
   CONSTRAINT fk_reg_event   FOREIGN KEY (event_id)   REFERENCES parent_events  (event_id)   ON DELETE CASCADE,
   CONSTRAINT fk_reg_session FOREIGN KEY (session_id) REFERENCES event_sessions (session_id) ON DELETE CASCADE,
   CONSTRAINT fk_reg_user    FOREIGN KEY (user_id)    REFERENCES users           (user_id)
@@ -463,13 +467,18 @@ CREATE TABLE user_venues (
 -- 20. USER ROLES
 -- =============================================================================
 CREATE TABLE user_roles (
-  user_role_id INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-  user_id      INT UNSIGNED     NOT NULL,
-  role_id      TINYINT UNSIGNED NOT NULL,
-  status       ENUM('Pending','Active','Revoked') NOT NULL DEFAULT 'Pending',
-  requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  approved_at  TIMESTAMP NULL,
-  approved_by  INT UNSIGNED NULL,
+  user_role_id     INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+  user_id          INT UNSIGNED     NOT NULL,
+  role_id          TINYINT UNSIGNED NOT NULL,
+  status           ENUM('Pending','Active','Revoked') NOT NULL DEFAULT 'Pending',
+  id_proof_url     VARCHAR(500)     NULL,
+  id_proof_public_id VARCHAR(255)   NULL,
+  photo_url        VARCHAR(500)     NULL,
+  photo_public_id  VARCHAR(255)     NULL,
+  rejection_reason VARCHAR(300)     NULL,
+  requested_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  approved_at      TIMESTAMP NULL,
+  approved_by      INT UNSIGNED NULL,
 
   PRIMARY KEY (user_role_id),
   UNIQUE KEY uq_user_role (user_id, role_id),
@@ -484,7 +493,7 @@ CREATE TABLE user_roles (
 CREATE INDEX idx_sessions_window ON event_sessions  (show_date, status);
 CREATE INDEX idx_ss_locked        ON session_seats   (status, locked_until);
 CREATE INDEX idx_tickets_uuid     ON tickets         (ticket_uuid);
-CREATE INDEX idx_bookings_stripe  ON bookings        (stripe_session_id);
+CREATE INDEX idx_bookings_razorpay ON bookings        (razorpay_order_id);
 CREATE INDEX idx_reviews_event    ON reviews         (event_id, rating);
 CREATE INDEX idx_reviews_session  ON reviews         (session_id, rating);
 CREATE INDEX idx_bh_booking_time  ON booking_history (booking_id, changed_at);
@@ -528,6 +537,7 @@ book_seats: BEGIN
   DECLARE v_today       DATE         DEFAULT CURDATE();
   DECLARE v_demand_mult DECIMAL(4,2);
   DECLARE v_locked      INT          DEFAULT 0;
+  DECLARE v_days_ahead  SMALLINT     DEFAULT 5;
 
   DECLARE EXIT HANDLER FOR SQLEXCEPTION
   BEGIN
@@ -538,15 +548,16 @@ book_seats: BEGIN
 
   START TRANSACTION;
 
-  SELECT show_date, demand_multiplier
-    INTO v_show_date, v_demand_mult
-    FROM event_sessions
-   WHERE session_id = p_session_id;
+  SELECT es.show_date, es.demand_multiplier, pe.listing_days_ahead
+    INTO v_show_date, v_demand_mult, v_days_ahead
+    FROM event_sessions es
+    JOIN parent_events pe ON pe.event_id = es.event_id
+   WHERE es.session_id = p_session_id;
 
-  IF v_show_date < v_today OR v_show_date > DATE_ADD(v_today, INTERVAL 4 DAY) THEN
+  IF v_show_date < v_today OR v_show_date > DATE_ADD(v_today, INTERVAL (v_days_ahead - 1) DAY) THEN
     ROLLBACK;
     SET p_result_code = 2;
-    SET p_result_msg  = 'Outside 5-day booking window';
+    SET p_result_msg  = CONCAT('Outside ', v_days_ahead, '-day booking window');
     LEAVE book_seats;
   END IF;
 
@@ -611,10 +622,10 @@ DELIMITER $$
 DROP PROCEDURE IF EXISTS confirm_booking$$
 
 CREATE PROCEDURE confirm_booking(
-  IN  p_booking_id               INT UNSIGNED,
-  IN  p_stripe_payment_intent_id VARCHAR(100),
-  IN  p_stripe_signature         VARCHAR(255),
-  IN  p_amount                   DECIMAL(10,2),
+  IN  p_booking_id          INT UNSIGNED,
+  IN  p_razorpay_payment_id VARCHAR(100),
+  IN  p_razorpay_signature  VARCHAR(512),
+  IN  p_amount              DECIMAL(10,2),
   OUT p_result_code TINYINT,
   OUT p_result_msg  VARCHAR(255)
 )
@@ -629,9 +640,9 @@ BEGIN
   START TRANSACTION;
 
   INSERT INTO payments
-    (booking_id, amount, stripe_payment_intent_id, stripe_signature, payment_status, paid_at)
+    (booking_id, amount, razorpay_payment_id, razorpay_signature, payment_status, paid_at)
   VALUES
-    (p_booking_id, p_amount, p_stripe_payment_intent_id, p_stripe_signature, 'Success', NOW());
+    (p_booking_id, p_amount, p_razorpay_payment_id, p_razorpay_signature, 'Success', NOW());
 
   UPDATE bookings
      SET booking_status = 'Confirmed'
@@ -895,7 +906,7 @@ JOIN parent_events pe ON pe.event_id  = es.event_id
 JOIN venues        v  ON v.venue_id   = es.venue_id
 JOIN cities        c  ON c.city_id    = v.city_id
 JOIN states        s  ON s.state_id   = c.state_id
-WHERE es.show_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL pe.listing_days_ahead DAY)
+WHERE es.show_date >= CURDATE()
   AND es.status   = 'Scheduled'
   AND pe.is_active = TRUE;
 
@@ -921,17 +932,17 @@ SELECT
   es.show_time,
   st.tier_name,
   se.seat_label
-FROM tickets       t
+FROM tickets    t
 JOIN session_seats ss ON ss.session_seat_id = t.session_seat_id
-JOIN seats         se ON se.seat_id         = ss.seat_id
-JOIN seat_tiers    st ON st.tier_id         = se.tier_id
-JOIN event_sessions es ON es.session_id     = ss.session_id
-JOIN parent_events pe  ON pe.event_id       = es.event_id
-JOIN venues        v   ON v.venue_id        = es.venue_id
-JOIN cities        c   ON c.city_id         = v.city_id
-JOIN states        s   ON s.state_id        = c.state_id
-JOIN bookings      b   ON b.booking_id      = t.booking_id
-JOIN users         u   ON u.user_id         = b.user_id;
+JOIN seats         se ON se.seat_id= ss.seat_id
+JOIN seat_tiers    st ON st.tier_id= se.tier_id
+JOIN event_sessions es ON es.session_id= ss.session_id
+JOIN parent_events pe  ON pe.event_id= es.event_id
+JOIN venues   v   ON v.venue_id= es.venue_id
+JOIN cities   c   ON c.city_id  = v.city_id
+JOIN states   s   ON s.state_id    = c.state_id
+JOIN bookings  b   ON b.booking_id   = t.booking_id
+JOIN users  u   ON u.user_id= b.user_id;
 
 -- Review scores per event and per session
 CREATE OR REPLACE VIEW vw_review_scores AS
@@ -942,9 +953,9 @@ SELECT 'parent_event' AS level,
   FROM reviews WHERE event_id IS NOT NULL
   GROUP BY event_id
 UNION ALL
-SELECT 'session'      AS level,
-       session_id     AS target_id,
-       COUNT(*)       AS total_reviews,
+SELECT 'session'AS level,
+       session_id AS target_id,
+       COUNT(*) AS total_reviews,
        ROUND(AVG(rating), 1) AS avg_rating
   FROM reviews WHERE session_id IS NOT NULL
   GROUP BY session_id;
@@ -973,9 +984,9 @@ SELECT
   pe.registration_mode,
   pe.participation_type,
   pe.max_participants,
-  COUNT(er.registration_id)          AS total_registered,
-  SUM(er.status = 'Confirmed')       AS confirmed,
-  SUM(er.status = 'Pending')         AS pending,
+  COUNT(er.registration_id)AS total_registered,
+  SUM(er.status = 'Confirmed')AS confirmed,
+  SUM(er.status = 'Pending')AS pending,
   pe.max_participants - COUNT(er.registration_id) AS spots_left
 FROM parent_events pe
 LEFT JOIN event_registrations er

@@ -237,10 +237,18 @@ function MyReviewCard({ review }) {
     );
 }
 
-//  Role Request Banner 
+//  Role Request Elevation Form
 function RoleRequestSection({ user, onToast }) {
     const [requesting, setRequesting] = useState(false);
     const [status, setStatus] = useState(null); // null | Pending | Active | Revoked
+    const [selectedRole, setSelectedRole] = useState('');
+    const [venueDetails, setVenueDetails] = useState({ venue_name: '', address: '', state_id: '', city_id: '' });
+    const [files, setFiles] = useState({ id_proof: null, photo: null });
+    const [showForm, setShowForm] = useState(false);
+    
+    // For Venue Owner form
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
 
     useEffect(() => {
         api.get('/auth/role-request-status')
@@ -248,46 +256,162 @@ function RoleRequestSection({ user, onToast }) {
             .catch(() => { });
     }, []);
 
-    const request = async (role) => {
-        setRequesting(true);
+    const fetchLocations = async () => {
         try {
-            await api.post('/auth/request-role', { role });
-            setStatus('Pending');
-            onToast(`Role request for "${role}" submitted!`, 'success');
-        } catch (e) {
-            onToast(e.response?.data?.message || 'Could not submit request', 'error');
-        } finally { setRequesting(false); }
+            const res = await api.get('/locations/states');
+            setStates(res.data?.data || []);
+        } catch { }
     };
 
-    const currentRole = user?.rolename || 'Attendee';
-    if (currentRole !== 'Attendee') return null;
+    // When state changes, fetch cities
+    useEffect(() => {
+        if (venueDetails.state_id) {
+            api.get(`/locations/cities?state_id=${venueDetails.state_id}`)
+                .then(r => setCities(r.data?.data || []))
+                .catch(() => setCities([]));
+        } else {
+            setCities([]);
+        }
+    }, [venueDetails.state_id]);
+
+    useEffect(() => {
+        if (selectedRole === 'Venue Owner' && states.length === 0) {
+            fetchLocations();
+        }
+    }, [selectedRole, states.length]);
+
+    const handleFileChange = (e, type) => {
+        setFiles(prev => ({ ...prev, [type]: e.target.files[0] }));
+    };
+
+    const submitRequest = async (e) => {
+        e.preventDefault();
+        if (!selectedRole) return;
+        if (!files.id_proof || !files.photo) return onToast('Please upload both ID Proof and Photo', 'error');
+        
+        setRequesting(true);
+        const form = new FormData();
+        form.append('role', selectedRole);
+        form.append('id_proof', files.id_proof);
+        form.append('photo', files.photo);
+
+        if (selectedRole === 'Venue Owner') {
+            if (!venueDetails.venue_name || !venueDetails.city_id || !venueDetails.address) {
+                setRequesting(false);
+                return onToast('Please fill all venue details', 'error');
+            }
+            form.append('venue_name', venueDetails.venue_name);
+            form.append('city_id', venueDetails.city_id);
+            form.append('address', venueDetails.address);
+        }
+
+        try {
+            await api.post('/auth/request-role', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+            setStatus('Pending');
+            onToast(`Role request for "${selectedRole}" submitted!`, 'success');
+            setShowForm(false);
+        } catch (e) {
+            onToast(e.response?.data?.message || 'Could not submit request', 'error');
+        } finally {
+            setRequesting(false);
+        }
+    };
+
+    const userRoles = user?.roles || (user?.role_name ? [user.role_name] : [user?.rolename || 'Attendee']);
+    // Hide entirely if they are Admin or Staff
+    if (userRoles.includes('System Admin') || userRoles.includes('Venue Staff')) return null;
 
     return (
         <div className="bg-surface-container border border-outline-variant rounded-2xl p-4">
             <p className="text-sm font-semibold text-on-surface flex items-center gap-2 mb-1">
                 <Shield size={14} className="text-primary" /> Upgrade Account
             </p>
-            {status === 'Pending' ? (
-                <p className="text-xs text-on-surface-variant">
-                    Your role upgrade request is <span className="text-gold font-semibold">pending admin approval</span>.
+            {status === 'Pending' && (
+                <p className="text-xs text-gold font-semibold mb-3">
+                    Your recent role upgrade request is pending admin approval.
                 </p>
-            ) : status === 'Active' ? (
-                <p className="text-xs text-tertiary">Role upgrade approved ✓</p>
+            )}
+            {status === 'Active' && (
+                <p className="text-xs text-tertiary mb-3">
+                    Your recent role upgrade request was approved ✓
+                </p>
+            )}
+            
+            {showForm ? (
+                <form onSubmit={submitRequest} className="mt-4 space-y-4">
+                    <div className="flex gap-2 mb-4">
+                        {['Event Organizer', 'Venue Owner'].map(role => (
+                            <button key={role} type="button" onClick={() => setSelectedRole(role)}
+                                className={`px-3 py-1.5 text-xs font-semibold border rounded-xl transition-all
+                                    ${selectedRole === role ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant text-on-surface-variant hover:text-white'}`}>
+                                {role}
+                            </button>
+                        ))}
+                    </div>
+
+                    {selectedRole === 'Venue Owner' && (
+                        <div className="p-3 bg-surface-container-highest rounded-xl space-y-3 mb-4">
+                            <p className="text-xs font-semibold text-on-surface">Venue Details</p>
+                            <input
+                                type="text" placeholder="Venue Name" required
+                                value={venueDetails.venue_name} onChange={e => setVenueDetails({...venueDetails, venue_name: e.target.value})}
+                                className="w-full bg-background text-on-surface text-sm rounded-lg px-3 py-2 border border-outline-variant outline-none focus:border-primary"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                                <select 
+                                    value={venueDetails.state_id} onChange={e => setVenueDetails({...venueDetails, state_id: e.target.value, city_id: ''})}
+                                    className="bg-background text-on-surface text-sm rounded-lg px-3 py-2 border border-outline-variant outline-none focus:border-primary">
+                                    <option value="">Select State</option>
+                                    {states.map(s => <option key={s.state_id} value={s.state_id}>{s.state_name}</option>)}
+                                </select>
+                                <select 
+                                    value={venueDetails.city_id} onChange={e => setVenueDetails({...venueDetails, city_id: e.target.value})}
+                                    required className="bg-background text-on-surface text-sm rounded-lg px-3 py-2 border border-outline-variant outline-none focus:border-primary">
+                                    <option value="">Select City</option>
+                                    {cities.map(c => <option key={c.city_id} value={c.city_id}>{c.city_name}</option>)}
+                                </select>
+                            </div>
+                            <input
+                                type="text" placeholder="Full Address" required
+                                value={venueDetails.address} onChange={e => setVenueDetails({...venueDetails, address: e.target.value})}
+                                className="w-full bg-background text-on-surface text-sm rounded-lg px-3 py-2 border border-outline-variant outline-none focus:border-primary"
+                            />
+                        </div>
+                    )}
+
+                    {selectedRole && (
+                        <div className="space-y-3">
+                            <div>
+                                <label className="text-10px font-semibold uppercase tracking-widest text-on-surface-variant mb-1 block">Government ID Proof</label>
+                                <input type="file" accept="image/*,application/pdf" required onChange={e => handleFileChange(e, 'id_proof')}
+                                    className="w-full text-xs text-on-surface-variant file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-surface-container-highest file:text-on-surface hover:file:bg-surface-container transition-all" />
+                            </div>
+                            <div>
+                                <label className="text-10px font-semibold uppercase tracking-widest text-on-surface-variant mb-1 block">Recent Photo</label>
+                                <input type="file" accept="image/*" required onChange={e => handleFileChange(e, 'photo')}
+                                    className="w-full text-xs text-on-surface-variant file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-surface-container-highest file:text-on-surface hover:file:bg-surface-container transition-all" />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-outline-variant">
+                        <button type="button" onClick={() => setShowForm(false)} disabled={requesting}
+                            className="px-4 py-2 text-sm font-semibold rounded-xl text-on-surface-variant hover:text-white transition-all">Cancel</button>
+                        <button type="submit" disabled={!selectedRole || requesting}
+                            className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
+                            {requesting && <Loader2 size={14} className="animate-spin" />} Submit Request
+                        </button>
+                    </div>
+                </form>
             ) : (
                 <>
                     <p className="text-xs text-on-surface-variant mb-3">
                         Request an upgrade to organise events or manage venues.
                     </p>
-                    <div className="flex gap-2 flex-wrap">
-                        {['Event Organizer', 'Venue Owner'].map(role => (
-                            <button key={role} onClick={() => request(role)} disabled={requesting}
-                                className="px-3 py-1.5 text-xs font-semibold border border-outline-variant rounded-xl
-                  text-on-surface-variant hover:text-primary hover:border-primary/40 hover:bg-primary/5
-                  transition-all disabled:opacity-50">
-                                {role}
-                            </button>
-                        ))}
-                    </div>
+                    <button onClick={() => setShowForm(true)}
+                        className="px-4 py-2 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 rounded-xl hover:bg-primary/20 transition-all">
+                        Start Application
+                    </button>
                 </>
             )}
         </div>
@@ -454,7 +578,7 @@ export default function ProfilePage() {
                                 </span>
                                 <span className="text-10px font-semibold px-2 py-0.5 rounded-full bg-surface-container-highest
                   text-on-surface-variant border border-outline-variant">
-                                    Joined {fmt(profile.createdat)}
+                                    Joined {profile.created_at ? fmt(profile.created_at) : '...'}
                                 </span>
                             </div>
                         </div>

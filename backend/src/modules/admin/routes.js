@@ -127,4 +127,22 @@ router.patch('/users/:user_id/revoke-role',
   validate, revokeRole
 );
 
+// ── Role Requests ─────────────────────────────────────────────────────────────
+const { getRoleRequests, approveRoleRequest, rejectRoleRequest } = require('./service');
+
+router.get('/role-requests', getRoleRequests);
+
+router.patch('/role-requests/:id/approve',
+  [param('id').isInt({ min: 1 }).withMessage('Invalid request ID')],
+  validate, approveRoleRequest
+);
+
+router.patch('/role-requests/:id/reject',
+  [
+    param('id').isInt({ min: 1 }).withMessage('Invalid request ID'),
+    body('reason').trim().notEmpty().withMessage('Rejection reason required'),
+  ],
+  validate, rejectRoleRequest
+);
+
 module.exports = router;

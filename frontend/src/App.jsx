@@ -47,10 +47,9 @@ function RoleRedirect() {
   const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
   const hasRole = (role) => userRoles.includes(role);
 
+  // Still force Admin and Staff to their portals, but let Organizers and Owners browse!
   if (hasRole('System Admin')) return <Navigate to="/admin" replace />;
   if (hasRole('Venue Staff')) return <Navigate to="/staff" replace />;
-  if (hasRole('Event Organizer')) return <Navigate to="/organizer" replace />;
-  if (hasRole('Venue Owner')) return <Navigate to="/venue-owner" replace />;
 
   return <BrowsePage />;
 }

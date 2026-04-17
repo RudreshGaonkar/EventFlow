@@ -1,27 +1,24 @@
 const { getPool } = require('../../config/db');
 
-const callConfirmBooking = async (booking_id, stripe_payment_intent_id, stripe_signature, amount) => {
+const callConfirmBooking = async (booking_id, razorpay_payment_id, razorpay_signature, amount) => {
   const pool = getPool();
   const conn = await pool.getConnection();
 
   console.log('[callConfirmBooking] Got dedicated connection');
-  console.log('[callConfirmBooking] Params:', { booking_id, stripe_payment_intent_id, stripe_signature: stripe_signature?.slice(0, 30) + '...', amount });
+  console.log('[callConfirmBooking] Params:', { booking_id, razorpay_payment_id, razorpay_signature: razorpay_signature?.slice(0, 30) + '...', amount });
 
   try {
     await conn.execute('SET @result_code = 0, @result_msg = ""');
-    console.log('[callConfirmBooking] SET session vars done');
 
     await conn.execute(
       'CALL confirm_booking(?, ?, ?, ?, @result_code, @result_msg)',
-      [booking_id, stripe_payment_intent_id, stripe_signature, amount]
+      [booking_id, razorpay_payment_id, razorpay_signature, amount]
     );
-    console.log('[callConfirmBooking] CALL confirm_booking done');
 
     const [[out]] = await conn.execute(
       'SELECT @result_code AS result_code, @result_msg AS result_msg'
     );
     console.log('[callConfirmBooking] OUT params:', out);
-
     return out;
   } catch (err) {
     console.error('[callConfirmBooking] SQL error:', err.message);
@@ -32,11 +29,11 @@ const callConfirmBooking = async (booking_id, stripe_payment_intent_id, stripe_s
   }
 };
 
-const getBookingByStripeSession = async (stripe_session_id) => {
+const getBookingByRazorpayOrder = async (razorpay_order_id) => {
   const pool = getPool();
   const [rows] = await pool.execute(
-    'SELECT * FROM bookings WHERE stripe_session_id = ? LIMIT 1',
-    [stripe_session_id]
+    'SELECT * FROM bookings WHERE razorpay_order_id = ? LIMIT 1',
+    [razorpay_order_id]
   );
   return rows[0] || null;
 };
@@ -95,7 +92,7 @@ const getTicketsByBooking = async (booking_id) => {
 
 module.exports = {
   callConfirmBooking,
-  getBookingByStripeSession,
+  getBookingByRazorpayOrder,
   markBookingFailed,
   getTicketsByBooking,
 };

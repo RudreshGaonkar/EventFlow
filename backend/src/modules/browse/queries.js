@@ -22,17 +22,17 @@ const searchEvents = async ({ search, city_id, state_id, event_type, genre }) =>
       ANY_VALUE(s.state_name)           AS state_name,
       MIN(es.show_date)                 AS next_show
     FROM parent_events pe
-    JOIN event_sessions es ON es.event_id  = pe.event_id
-    JOIN venues v          ON v.venue_id   = es.venue_id
-    JOIN cities c          ON c.city_id    = v.city_id
-    JOIN states s          ON s.state_id   = c.state_id
+    LEFT JOIN event_sessions es ON es.event_id  = pe.event_id
+    LEFT JOIN venues v          ON v.venue_id   = es.venue_id
+    LEFT JOIN cities c          ON c.city_id    = v.city_id
+    LEFT JOIN states s          ON s.state_id   = c.state_id
     WHERE pe.is_active = 1
-      AND es.status    = 'Scheduled'
-      AND es.show_date >= CURDATE()
-      AND es.show_date <= DATE_ADD(CURDATE(), INTERVAL pe.listing_days_ahead DAY)
+      AND (es.status IS NULL OR es.status = 'Scheduled')
+      AND (es.show_date IS NULL OR es.show_date >= CURDATE())
       AND (
         pe.event_scope = 'national'
         OR c.state_id  = ?
+        OR es.session_id IS NULL
       )
   `;
 
@@ -102,6 +102,7 @@ const getSessionsByEvent = async (event_id) => {
        pe.registration_fee, pe.max_participants,
        pe.min_team_size,
        pe.max_team_size,
+       pe.listing_days_ahead,
        v.venue_id,
        v.venue_name,
        v.address,
@@ -119,9 +120,8 @@ const getSessionsByEvent = async (event_id) => {
        AND pe.is_active  = 1
        AND es.status     = 'Scheduled'
        AND es.show_date  >= CURDATE()
-       AND es.show_date  <= DATE_ADD(CURDATE(), INTERVAL ? DAY)
      ORDER BY es.show_date ASC, es.show_time ASC`,
-    [ev.title, ev.listing_days_ahead]
+    [ev.title]
   );
   return rows;
 };
@@ -142,7 +142,6 @@ const getCitiesWithEvents = async () => {
      WHERE pe.is_active  = 1
        AND es.status     = 'Scheduled'
        AND es.show_date  >= CURDATE()
-       AND es.show_date  <= DATE_ADD(CURDATE(), INTERVAL pe.listing_days_ahead DAY)
      ORDER BY c.city_name`
   );
   return rows;
@@ -162,7 +161,6 @@ const getStates = async () => {
      WHERE pe.is_active  = 1
        AND es.status     = 'Scheduled'
        AND es.show_date  >= CURDATE()
-       AND es.show_date  <= DATE_ADD(CURDATE(), INTERVAL pe.listing_days_ahead DAY)
      ORDER BY s.state_name`
   );
   return rows;

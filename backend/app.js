@@ -2,7 +2,6 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const { initStripe } = require('./src/config/stripe');
 const cron = require('node-cron');
 const { cleanupExpiredLocks } = require('./src/modules/seats/service');
 
@@ -17,22 +16,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// ─── Stripe Webhooks — RAW BODY (must be BEFORE express.json()) ───────────────
-// Registration webhook — raw body handled here, NOT inside routes.js
-app.use(
-  '/api/registration/webhook',
-  express.raw({ type: 'application/json' }),
-  require('./src/modules/registration/routes')
-);
-
-// Payment webhook — raw body, handler mounted directly
-app.post(
-  '/api/payment/webhook',
-  express.raw({ type: 'application/json' }),
-  require('./src/modules/payment/service').handleWebhook
-);
-
-// ─── Body Parsers (after webhook routes) ─────────────────────────────────────
+// ─── Body Parsers ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
@@ -56,6 +40,7 @@ app.use('/api/organizer', require('./src/modules/organizer/routes'));
 app.use('/api/venue-owner', require('./src/modules/venue-owner/routes'));
 app.use('/api/browse', require('./src/modules/browse/routes'));
 app.use('/api/registration', require('./src/modules/registration/routes'));
+app.use('/api/locations', require('./src/modules/locations/routes'));
 
 // ─── Jobs ─────────────────────────────────────────────────────────────────────
 const { updateSessionStatuses } = require('./src/jobs/sessionStatusUpdater');
@@ -83,8 +68,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── Init Stripe ──────────────────────────────────────────────────────────────
-initStripe();
 
 const bookingConsumer = require('./src/workers/bookingConsumer');
 bookingConsumer.start();

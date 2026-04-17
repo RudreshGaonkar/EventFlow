@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { findUserByEmail, findUserById, findUserRoles, createUser, updateHomeState } = require('./queries');
-const { uploadToCloudinary } = require('../../config/cloudinary');
+const { uploadImageBuffer } = require('../../config/cloudinary');
 const pool = require('../../config/db').getPool();
 
 const SALT_ROUNDS = 12;
@@ -105,6 +105,11 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
+    // Ensure created_at is a string before hitting React
+    if (user.created_at) {
+      user.created_at = new Date(user.created_at).toISOString();
+    }
+
     const roles = await findUserRoles(req.user.user_id);
 
     return res.status(200).json({
@@ -172,9 +177,7 @@ const changePassword = async (req, res) => {
 const updateAvatar = async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
   try {
-    const result = await uploadToCloudinary(req.file.buffer, {
-      folder: 'avatars', transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }]
-    });
+    const result = await uploadImageBuffer(req.file.buffer, 'avatars');
     await pool.execute('UPDATE users SET avatarurl = ? WHERE userid = ?', [result.secure_url, req.user.userid]);
     res.json({ success: true, data: { avatarurl: result.secure_url } });
   } catch (e) {
@@ -197,14 +200,40 @@ const getRoleRequestStatus = async (req, res) => {
 };
 
 const requestRole = async (req, res) => {
-  const { role } = req.body;
+  const { role, venue_name, city_id, address } = req.body;
   try {
     const [[roleRow]] = await pool.execute('SELECT role_id FROM roles WHERE role_name = ?', [role]);
     if (!roleRow) return res.status(400).json({ success: false, message: 'Invalid role' });
+
+    let id_proof_url = null, id_proof_public_id = null;
+    let photo_url = null, photo_public_id = null;
+
+    if (req.files && req.files['id_proof']) {
+      const result = await uploadImageBuffer(req.files['id_proof'][0].buffer, 'kyc_docs');
+      id_proof_url = result.secure_url;
+      id_proof_public_id = result.public_id;
+    }
+    if (req.files && req.files['photo']) {
+      const result = await uploadImageBuffer(req.files['photo'][0].buffer, 'kyc_docs');
+      photo_url = result.secure_url;
+      photo_public_id = result.public_id;
+    }
+
+    if (role === 'Venue Owner') {
+      await pool.execute(
+        `INSERT INTO venues (city_id, owner_id, venue_name, address, status) VALUES (?, ?, ?, ?, 'Pending')`,
+        [city_id, req.user.user_id, venue_name, address]
+      );
+    }
+
     await pool.execute(
-      `INSERT INTO user_roles (user_id, role_id, status) VALUES (?, ?, 'Pending')
- ON DUPLICATE KEY UPDATE status = 'Pending', requested_at = NOW()`,
-      [req.user.user_id, roleRow.roleid]);
+      `INSERT INTO user_roles (user_id, role_id, status, id_proof_url, id_proof_public_id, photo_url, photo_public_id) 
+       VALUES (?, ?, 'Pending', ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE status = 'Pending', requested_at = NOW(), 
+       id_proof_url = VALUES(id_proof_url), id_proof_public_id = VALUES(id_proof_public_id), 
+       photo_url = VALUES(photo_url), photo_public_id = VALUES(photo_public_id)`,
+      [req.user.user_id, roleRow.role_id, id_proof_url, id_proof_public_id, photo_url, photo_public_id]
+    );
     res.json({ success: true, message: 'Role request submitted' });
   } catch (e) {
     console.error('ERROR:', e.message);

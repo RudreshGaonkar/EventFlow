@@ -236,10 +236,99 @@ const addUser = async (req, res) => {
   }
 };
 
+const getRoleRequests = async (req, res) => {
+  try {
+    const pool = require('../../config/db').getPool();
+    const [requests] = await pool.execute(`
+      SELECT ur.*, u.full_name, u.email, u.phone, r.role_name
+      FROM user_roles ur
+      JOIN users u ON u.user_id = ur.user_id
+      JOIN roles r ON r.role_id = ur.role_id
+      WHERE ur.status = 'Pending'
+    `);
+    return res.status(200).json({ success: true, data: requests });
+  } catch (err) {
+    console.error('[Admin] getRoleRequests error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch role requests' });
+  }
+};
+
+const approveRoleRequest = async (req, res) => {
+  try {
+    const { id } = req.params; // this is user_role_id
+    const pool = require('../../config/db').getPool();
+    
+    const [rows] = await pool.execute(`
+      SELECT ur.user_id, ur.role_id, r.role_name 
+      FROM user_roles ur
+      JOIN roles r ON r.role_id = ur.role_id
+      WHERE ur.user_role_id = ?
+    `, [id]);
+    
+    if (rows.length === 0) return res.status(404).json({ success: false, message: 'Request not found' });
+    const request = rows[0];
+
+    // Approve the role in user_roles
+    await pool.execute(`
+      UPDATE user_roles 
+      SET status = 'Active', approved_at = NOW(), approved_by = ? 
+      WHERE user_role_id = ?
+    `, [req.user.user_id, id]);
+
+    // Set as primary role in users table (optional but good for legacy compatibility)
+    await pool.execute(`UPDATE users SET role_id = ? WHERE user_id = ?`, [request.role_id, request.user_id]);
+
+    // Important: if Venue Owner, activate the pending venue!
+    if (request.role_name === 'Venue Owner') {
+      await pool.execute(`
+        UPDATE venues 
+        SET status = 'Active' 
+        WHERE owner_id = ? AND status = 'Pending'
+      `, [request.user_id]);
+    }
+
+    return res.status(200).json({ success: true, message: 'Role request approved' });
+  } catch (err) {
+    console.error('[Admin] approveRoleRequest error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not approve request' });
+  }
+};
+
+const rejectRoleRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const pool = require('../../config/db').getPool();
+    
+    const [rows] = await pool.execute(`
+      SELECT ur.user_id, r.role_name 
+      FROM user_roles ur
+      JOIN roles r ON r.role_id = ur.role_id
+      WHERE ur.user_role_id = ?
+    `, [id]);
+
+    await pool.execute(`
+      UPDATE user_roles 
+      SET status = 'Revoked', rejection_reason = ? 
+      WHERE user_role_id = ?
+    `, [reason, id]);
+
+    if(rows.length > 0 && rows[0].role_name === 'Venue Owner') {
+       await pool.execute(`DELETE FROM venues WHERE owner_id = ? AND status = 'Pending'`, [rows[0].user_id]);
+    }
+
+    return res.status(200).json({ success: true, message: 'Role request rejected' });
+  } catch (err) {
+    console.error('[Admin] rejectRoleRequest error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not reject request' });
+  }
+};
+
 module.exports = {
   getStates, addState, editState, removeState,
   getCities, addCity, editCity, editCityMultiplier, removeCity,
   getVenues, addVenue, editVenue, deactivateVenue,
   getUsers, grantRole, revokeRole, getRoles,
   addUser,
+  getRoleRequests, approveRoleRequest, rejectRoleRequest,
 };

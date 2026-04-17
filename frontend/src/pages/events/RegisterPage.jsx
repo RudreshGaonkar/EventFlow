@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getEventDetail, getEventSessions } from '../../services/browse';
 import { registerForEvent } from '../../services/registration';
+import api from '../../services/api';
 
 export default function RegistrationPage() {
   const { event_id } = useParams();
@@ -80,10 +81,45 @@ export default function RegistrationPage() {
         session_id:   form.session_id ? Number(form.session_id) : undefined,
       };
       const { data } = await registerForEvent(event_id, payload);
-      if (data.data?.checkout_url) {
-        window.location.href = data.data.checkout_url;
+      
+      // If it's a paid registration, Razorpay order details are returned
+      if (data.data?.razorpay_order_id) {
+        setSubmitting(false); // Enable UI again so modal can overlay cleanly
+
+        const options = {
+          key: data.data.razorpay_key,
+          amount: data.data.amount, // paise
+          currency: 'INR',
+          name: 'EventFlow',
+          description: `Registration — ${data.data.event_title}`,
+          order_id: data.data.razorpay_order_id,
+          handler: async function (response) {
+            try {
+              await api.post('/payment/verify', {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                registration_id: data.data.registration_id,
+                amount: data.data.amount / 100
+              });
+              navigate(`/registration/confirm?registration_id=${data.data.registration_id}`);
+            } catch (err) {
+              setError('Payment verification failed');
+            }
+          },
+          theme: { color: "#6750A4" },
+          modal: {
+            ondismiss: function() {
+              setError('Payment cancelled. Your registration is incomplete.');
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       } else {
-        navigate(`/registration/confirm?registration_id=${data.data.registration.registration_id}`);
+        // Free registration path
+        navigate(`/registration/confirm?registration_id=${data.data.registration?.registration_id || data.data.registration_id}`);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');

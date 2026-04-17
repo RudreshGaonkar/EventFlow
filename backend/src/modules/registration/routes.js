@@ -9,11 +9,7 @@ const {
   getRegistration,
   getEventRegistrations,
   cancelReg,
-  handleWebhook,
 } = require('./service');
-
-// ── Stripe webhook — raw body, NO auth ───────────────────────────────────────
-router.post('/webhook', handleWebhook);
 
 // ── All routes below require auth ─────────────────────────────────────────────
 router.use(protect);
