@@ -115,7 +115,7 @@ export default function VenueOwnerVenuesTab() {
         columns={['Venue', 'City', 'Capacity', 'Status', 'Actions']}
         rows={venues.map(v => [
           <div>
-            <p className="font-medium text-white text-sm">{v.venue_name}</p>
+            <p className="font-medium text-on-surface text-sm">{v.venue_name}</p>
             <p className="text-xs text-on-surface-variant">{v.address || '—'}</p>
           </div>,
           <span className="text-sm text-on-surface">{v.city_name}</span>,
@@ -155,7 +155,7 @@ export default function VenueOwnerVenuesTab() {
         <div className="space-y-1">
           <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70 px-1">City *</label>
           <select value={form.city_id} onChange={e => setForm(f => ({ ...f, city_id: e.target.value }))}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
             <option value="">Select City</option>
             {cities.map(c => <option key={c.city_id} value={c.city_id}>{c.city_name}, {c.state_name}</option>)}
           </select>
@@ -192,13 +192,13 @@ export default function VenueOwnerVenuesTab() {
           <div className="bg-surface-container rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
               <div>
-                <h2 className="text-white font-semibold">Manage Seats</h2>
+                <h2 className="text-on-surface font-semibold">Manage Seats</h2>
                 <p className="text-xs text-on-surface-variant">{seatPanel.venue.venue_name}</p>
               </div>
               <button onClick={() => setSeatPanel(null)}
-                className="text-on-surface-variant hover:text-white transition-colors text-xl leading-none">✕</button>
+                className="text-on-surface-variant hover:text-on-surface transition-colors text-xl leading-none">✕</button>
             </div>
 
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-6">
@@ -214,14 +214,14 @@ export default function VenueOwnerVenuesTab() {
                       onChange={e => setSeatForm(f => ({ ...f, seat_row: e.target.value.toUpperCase().slice(0, 2) }))}
                       placeholder="e.g. A"
                       maxLength={2}
-                      className="w-full px-3 py-2 bg-surface-container text-white rounded-xl text-sm outline-none"
+                      className="w-full px-3 py-2 bg-surface-container text-on-surface rounded-xl text-sm outline-none"
                     />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Tier *</label>
                     <select value={seatForm.tier_id}
                       onChange={e => setSeatForm(f => ({ ...f, tier_id: e.target.value }))}
-                      className="w-full px-3 py-2 bg-surface-container text-white rounded-xl text-sm outline-none">
+                      className="w-full px-3 py-2 bg-surface-container text-on-surface rounded-xl text-sm outline-none">
                       <option value="1">Recliner (₹800)</option>
                       <option value="2">Prime (₹400)</option>
                       <option value="3">Classic (₹200)</option>
@@ -233,7 +233,7 @@ export default function VenueOwnerVenuesTab() {
                       type="number" min={1} max={50}
                       value={seatForm.seat_count}
                       onChange={e => setSeatForm(f => ({ ...f, seat_count: e.target.value }))}
-                      className="w-full px-3 py-2 bg-surface-container text-white rounded-xl text-sm outline-none"
+                      className="w-full px-3 py-2 bg-surface-container text-on-surface rounded-xl text-sm outline-none"
                     />
                   </div>
                 </div>
@@ -265,7 +265,7 @@ export default function VenueOwnerVenuesTab() {
                               className={`w-8 h-8 rounded-lg text-[10px] font-bold transition-all border
                                 ${seat.is_active
                                   ? 'bg-primary/20 border-primary/40 text-primary hover:bg-error/20 hover:border-error/40 hover:text-error'
-                                  : 'bg-surface-container-highest border-white/10 text-on-surface-variant/40 hover:bg-primary/10 hover:text-primary'
+                                  : 'bg-surface-container-highest border-outline-variant/30 text-on-surface-variant/40 hover:bg-primary/10 hover:text-primary'
                                 }`}>
                               {seat.seat_number}
                             </button>
@@ -279,12 +279,12 @@ export default function VenueOwnerVenuesTab() {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-3 border-t border-white/10 flex justify-between items-center">
+            <div className="px-6 py-3 border-t border-outline-variant/30 flex justify-between items-center">
               <p className="text-xs text-on-surface-variant">
-                Total active seats: <strong className="text-white">{seats.filter(s => s.is_active).length}</strong>
+                Total active seats: <strong className="text-on-surface">{seats.filter(s => s.is_active).length}</strong>
               </p>
               <button onClick={() => setSeatPanel(null)}
-                className="px-4 py-2 text-sm text-on-surface-variant hover:text-white transition-colors">
+                className="px-4 py-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
                 Close
               </button>
             </div>

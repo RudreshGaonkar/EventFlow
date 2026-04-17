@@ -52,7 +52,7 @@ export const ToastProvider = ({ children }) => {
               <p className="text-sm text-on-surface flex-1 leading-snug">{toast.message}</p>
               <button
                 onClick={() => dismiss(toast.id)}
-                className="text-on-surface-variant hover:text-white transition-colors shrink-0 mt-0.5"
+                className="text-on-surface-variant hover:text-on-surface transition-colors shrink-0 mt-0.5"
               >
                 <X size={14} />
               </button>

@@ -69,7 +69,7 @@ export default function CitiesTab() {
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">State</label>
           <select value={form.state_id} onChange={e => setForm(f => ({ ...f, state_id: e.target.value }))}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
             <option value="">Select State</option>
             {states.map(s => <option key={s.state_id} value={s.state_id}>{s.state_name}</option>)}
           </select>

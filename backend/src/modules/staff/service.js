@@ -8,6 +8,7 @@ const {
   assignStaffVenue,
   findVenueById,
   findStaffByOrganizerVenues,
+  findSessionsByUserVenues,
 } = require('./queries');
 
 
@@ -149,4 +150,16 @@ const assignVenue = async (req, res) => {
 };
 
 
-module.exports = { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue };
+// ── My Sessions (for logged-in Staff) ───────────────────────────────────────
+const getMySessions = async (req, res) => {
+  try {
+    const sessions = await findSessionsByUserVenues(req.user.user_id);
+    return res.status(200).json({ success: true, data: sessions });
+  } catch (err) {
+    console.error('[Staff] getMySessions error:', err.message);
+    return res.status(500).json({ success: false, message: 'Could not fetch sessions' });
+  }
+};
+
+
+module.exports = { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue, getMySessions };

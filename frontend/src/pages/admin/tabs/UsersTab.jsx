@@ -78,7 +78,7 @@ export default function UsersTab() {
       <div className="flex justify-end mb-4">
         <button
           onClick={() => { setForm(BLANK); setModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
         >
           <UserPlus size={15} /> Add User
         </button>
@@ -102,7 +102,7 @@ export default function UsersTab() {
                 {u.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <div className="font-medium text-white text-sm">{u.full_name}</div>
+                <div className="font-medium text-on-surface text-sm">{u.full_name}</div>
                 {isPending && !isSelf && (
                   <span className="inline-flex items-center gap-1 text-[9px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full font-semibold">
                     <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse" />
@@ -141,7 +141,7 @@ export default function UsersTab() {
                 <select
                   value=""
                   onChange={e => e.target.value && handleGrantRole(u.user_id, e.target.value)}
-                  className="text-[10px] px-2 py-0.5 bg-surface-container-highest text-on-surface-variant rounded-full outline-none cursor-pointer hover:text-white transition-colors"
+                  className="text-[10px] px-2 py-0.5 bg-surface-container-highest text-on-surface-variant rounded-full outline-none cursor-pointer hover:text-on-surface transition-colors"
                 >
                   <option value="">+ Add role</option>
                   {availableToGrant.map(r => (
@@ -177,7 +177,7 @@ export default function UsersTab() {
           <select
             value={form.role_id}
             onChange={set('role_id')}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
           >
             <option value="">Select a role</option>
             {roles.map(r => (

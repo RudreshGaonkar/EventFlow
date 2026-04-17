@@ -3,9 +3,18 @@ const { body, param } = require('express-validator');
 const { protect } = require('../../middleware/authMiddleware');
 const { allowRoles } = require('../../middleware/roleMiddleware');
 const { validate } = require('../../middleware/validate');
-const { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue } = require('./service');
+const { addStaff, getAllStaff, getStaffById, toggleActive, assignVenue, getMySessions } = require('./service');
 
 router.get('/', protect, allowRoles('System Admin', 'Event Organizer'), getAllStaff);
+
+// ── Staff: my sessions ──────────────────────────────────────────────────────
+// MUST be before /:user_id so it doesn't get treated as a user parameter
+router.get(
+  '/my-sessions',
+  protect,
+  allowRoles('Venue Staff'),
+  getMySessions
+);
 
 router.get(
   '/:user_id',

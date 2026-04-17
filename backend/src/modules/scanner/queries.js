@@ -1,8 +1,8 @@
 const db = require('../../config/db');
 
 const validateTicket = async (ticket_uuid, staff_id) => {
-  const [rows] = await db.query(
-    'CALL validateticket(?, ?, @result_code, @result_msg)',
+  await db.query(
+    'CALL validate_ticket(?, ?, @result_code, @result_msg)',
     [ticket_uuid, staff_id]
   );
 
@@ -13,28 +13,32 @@ const validateTicket = async (ticket_uuid, staff_id) => {
   return out;
 };
 
+// Returns metadata about a ticket for display, plus the session_id it belongs to
+// so the service layer can enforce strict session matching.
 const getTicketPreview = async (ticket_uuid) => {
   const [rows] = await db.query(
     `SELECT
-      t.ticketuuid,
-      t.entrystatus,
-      u.fullname     AS attendee_name,
-      pe.title       AS event_title,
-      v.venuename    AS venue_name,
-      es.showdate    AS show_date,
-      es.showtime    AS show_time,
-      st.tiername    AS tier_name,
-      s.seatlabel    AS seat_label
-    FROM tickets t
-    JOIN sessionseats ss  ON ss.sessionseatid = t.sessionseatid
-    JOIN seats s          ON s.seatid = ss.seatid
-    JOIN seattiers st     ON st.tierid = s.tierid
-    JOIN eventsessions es ON es.sessionid = ss.sessionid
-    JOIN parentevents pe  ON pe.eventid = es.eventid
-    JOIN venues v         ON v.venueid = es.venueid
-    JOIN bookings b       ON b.bookingid = t.bookingid
-    JOIN users u          ON u.userid = b.userid
-    WHERE t.ticketuuid = ?`,
+       t.ticket_uuid,
+       t.entry_status,
+       es.session_id,
+       pe.title       AS event_title,
+       pe.event_type,
+       v.venue_name,
+       es.show_date,
+       es.show_time,
+       st.tier_name,
+       s.seat_label,
+       u.full_name     AS attendee_name
+     FROM tickets t
+     JOIN session_seats  ss ON ss.session_seat_id = t.session_seat_id
+     JOIN seats          s  ON s.seat_id           = ss.seat_id
+     JOIN seat_tiers     st ON st.tier_id          = s.tier_id
+     JOIN event_sessions es ON es.session_id        = ss.session_id
+     JOIN parent_events  pe ON pe.event_id          = es.event_id
+     JOIN venues         v  ON v.venue_id           = es.venue_id
+     JOIN bookings       b  ON b.booking_id         = t.booking_id
+     JOIN users          u  ON u.user_id            = b.user_id
+     WHERE t.ticket_uuid = ?`,
     [ticket_uuid]
   );
   return rows[0] || null;

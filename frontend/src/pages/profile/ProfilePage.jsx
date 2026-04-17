@@ -343,7 +343,7 @@ function RoleRequestSection({ user, onToast }) {
                         {['Event Organizer', 'Venue Owner'].map(role => (
                             <button key={role} type="button" onClick={() => setSelectedRole(role)}
                                 className={`px-3 py-1.5 text-xs font-semibold border rounded-xl transition-all
-                                    ${selectedRole === role ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant text-on-surface-variant hover:text-white'}`}>
+                                    ${selectedRole === role ? 'border-primary bg-primary/10 text-primary' : 'border-outline-variant text-on-surface-variant hover:text-on-surface'}`}>
                                 {role}
                             </button>
                         ))}
@@ -396,7 +396,7 @@ function RoleRequestSection({ user, onToast }) {
 
                     <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-outline-variant">
                         <button type="button" onClick={() => setShowForm(false)} disabled={requesting}
-                            className="px-4 py-2 text-sm font-semibold rounded-xl text-on-surface-variant hover:text-white transition-all">Cancel</button>
+                            className="px-4 py-2 text-sm font-semibold rounded-xl text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
                         <button type="submit" disabled={!selectedRole || requesting}
                             className="px-4 py-2 bg-primary text-on-primary text-sm font-semibold rounded-xl hover:opacity-90 transition-all flex items-center gap-2">
                             {requesting && <Loader2 size={14} className="animate-spin" />} Submit Request
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                     {/* ── RIGHT: Activity ── */}
                     <div className="lg:col-span-3">
                         {/* Tabs */}
-                        <div className="flex gap-2 overflow-x-auto pb-1 mb-5" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex gap-2 overflow-x-auto pb-1 mb-5" >
                             <Tab active={activeTab === 'bookings'} onClick={() => setActiveTab('bookings')}
                                 icon={Ticket} label="Bookings" count={bookings.length} />
                             <Tab active={activeTab === 'regs'} onClick={() => setActiveTab('regs')}

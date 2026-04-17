@@ -73,7 +73,7 @@ export default function EventsTab() {
               : <div className="w-9 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center"><Image size={14} className="text-outline" /></div>
             }
             <div>
-              <p className="font-medium text-white text-sm">{e.title}</p>
+              <p className="font-medium text-on-surface text-sm">{e.title}</p>
               <p className="text-xs text-on-surface-variant">{e.language}</p>
             </div>
           </div>,
@@ -95,7 +95,7 @@ export default function EventsTab() {
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Type</label>
             <select value={form.event_type} onChange={set('event_type')}
-              className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+              className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
               {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
             </select>
           </div>
@@ -103,7 +103,7 @@ export default function EventsTab() {
           <div className="space-y-1">
             <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Rating</label>
             <select value={form.rating} onChange={set('rating')}
-              className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+              className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
               {RATINGS.map(r => <option key={r}>{r}</option>)}
             </select>
           </div>

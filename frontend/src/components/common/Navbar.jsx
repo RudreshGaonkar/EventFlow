@@ -49,7 +49,7 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-primary-container rounded-xl flex items-center justify-center">
             <Ticket size={16} className="text-on-primary-container" fill="currentColor" />
           </div>
-          <span className="font-headline text-lg font-extrabold text-white tracking-tight">
+          <span className="font-headline text-lg font-extrabold text-on-surface tracking-tight">
             EventFlow
           </span>
         </Link>
@@ -59,7 +59,7 @@ export default function Navbar() {
           
           <Link to="/"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
-              text-on-surface-variant hover:text-white transition-all"
+              text-on-surface-variant hover:text-on-surface transition-all"
           >
             Browse
           </Link>
@@ -95,13 +95,22 @@ export default function Navbar() {
           )}
 
           {hasRole('Venue Staff') && (
-            <Link to="/staff"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
-                text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-full
-                hover:bg-blue-400/20 transition-all"
-            >
-              <Settings size={13} /> Staff
-            </Link>
+            <>
+              <Link to="/staff"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                  text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-full
+                  hover:bg-blue-400/20 transition-all"
+              >
+                <Settings size={13} /> Staff Portal
+              </Link>
+              <Link to="/scanner"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold
+                  text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 rounded-full
+                  hover:bg-cyan-400/20 transition-all"
+              >
+                <Settings size={13} /> Scanner
+              </Link>
+            </>
           )}
 
           {user ? (
@@ -133,7 +142,7 @@ export default function Navbar() {
                       overflow-hidden py-1"
                   >
                     <div className="px-4 py-3 border-b border-outline-variant/10">
-                      <p className="text-sm font-semibold text-white truncate">{user.full_name}</p>
+                      <p className="text-sm font-semibold text-on-surface truncate">{user.full_name}</p>
                       <p className="text-xs text-on-surface-variant truncate">{user.email}</p>
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {userRoles.map(r => (
@@ -153,7 +162,7 @@ export default function Navbar() {
                     ].map(({ icon: Icon, label, to }) => (
                       <Link key={to} to={to}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm
-                          text-on-surface-variant hover:text-white hover:bg-surface-container-high
+                          text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high
                           transition-all"
                       >
                         <Icon size={15} /> {label}
@@ -184,7 +193,7 @@ export default function Navbar() {
 
         {/* Mobile hamburger */}
         <button onClick={() => setMobileOpen(o => !o)}
-          className="md:hidden text-on-surface-variant hover:text-white transition-colors"
+          className="md:hidden text-on-surface-variant hover:text-on-surface transition-colors"
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -207,7 +216,7 @@ export default function Navbar() {
                       <span className="text-xs font-bold text-on-primary-container">{initials}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">{user.full_name}</p>
+                      <p className="text-sm font-semibold text-on-surface">{user.full_name}</p>
                       <p className="text-xs text-on-surface-variant">{userRoles.join(' · ')}</p>
                     </div>
                   </div>
@@ -224,7 +233,7 @@ export default function Navbar() {
                     ...(hasRole('Venue Staff')     ? [{ label: 'Staff Portal',        to: '/staff'       }] : []),
                   ].map(({ label, to }) => (
                     <Link key={to} to={to}
-                      className="block py-2.5 text-sm text-on-surface-variant hover:text-white transition-colors">
+                      className="block py-2.5 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
                       {label}
                     </Link>
                   ))}

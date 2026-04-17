@@ -7,7 +7,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-extrabold text-white font-headline">{title}</h1>
+          <h1 className="text-xl font-extrabold text-on-surface font-headline">{title}</h1>
           <p className="text-xs text-on-surface-variant mt-0.5">{rows.length} records</p>
         </div>
         {!hideAdd && onAdd && (

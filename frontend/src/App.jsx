@@ -43,17 +43,7 @@ import VenueOwnerPage from './pages/venue-owner/VenueOwnerPage';
 // Pages that hide the Navbar
 const NO_NAVBAR = ['/login'];
 
-function RoleRedirect() {
-  const { user } = useAuth();
-  const userRoles = user?.roles || (user?.role_name ? [user.role_name] : []);
-  const hasRole = (role) => userRoles.includes(role);
-
-  // Still force Admin and Staff to their portals, but let Organizers and Owners browse!
-  if (hasRole('System Admin')) return <Navigate to="/admin" replace />;
-  if (hasRole('Venue Staff')) return <Navigate to="/staff" replace />;
-
-  return <BrowsePage />;
-}
+// RoleRedirect removed — all users land on BrowsePage and use the Navbar to reach their dashboards.
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -81,8 +71,8 @@ export default function App() {
           {/* ── Public ── */}
           <Route path="/login" element={<LoginPage />} />
 
-          {/* ── Home — role-based redirect ── */}
-          <Route path="/" element={<PrivateRoute><RoleRedirect /></PrivateRoute>} />
+          {/* ── Home — always BrowsePage ── */}
+          <Route path="/" element={<PrivateRoute><BrowsePage /></PrivateRoute>} />
 
           {/* ── Events ── */}
           <Route path="/events/:event_id"
@@ -130,6 +120,11 @@ export default function App() {
           <Route path="/staff" element={
             <RoleGuard roles={['Venue Staff', 'System Admin']}><StaffPage /></RoleGuard>
           } />
+          {/* Session-specific scanner (from StaffPage "Start Scanning" CTA) */}
+          <Route path="/scanner/:sessionId" element={
+            <RoleGuard roles={['Venue Staff', 'System Admin']}><ScannerPage /></RoleGuard>
+          } />
+          {/* Bare scanner — fallback / direct access */}
           <Route path="/scanner" element={
             <RoleGuard roles={['Venue Staff', 'System Admin']}><ScannerPage /></RoleGuard>
           } />

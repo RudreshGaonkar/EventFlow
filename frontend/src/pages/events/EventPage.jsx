@@ -83,7 +83,7 @@ function SessionCard({ session, onSelect, listingDaysAhead }) {
       <div className="h-1 bg-surface-container-highest rounded-full overflow-hidden mb-1">
         <div
           className={`h-full rounded-full transition-all ${isFull ? 'bg-error' : isHot ? 'bg-secondary' : 'bg-tertiary'}`}
-          style={{ width: `${pct}%` }}
+          style={ { width: `${pct}%` } }
         />
       </div>
       <p className="text-[10px] text-on-surface-variant mb-3">{available} seats left</p>
@@ -345,7 +345,7 @@ export default function EventPage() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
           <button onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-white transition-colors mb-6">
+            className="flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-on-surface transition-colors mb-6">
             <ChevronLeft size={16} /> Back
           </button>
 
@@ -394,7 +394,7 @@ export default function EventPage() {
                 )}
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white leading-tight mb-3">
+              <h1 className="text-2xl sm:text-4xl font-extrabold text-on-surface leading-tight mb-3">
                 {event.title}
               </h1>
 
@@ -538,7 +538,7 @@ export default function EventPage() {
                   {isBookingEvent && (
                     <>
                       {cities.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto mb-3 pb-1" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex gap-2 overflow-x-auto mb-3 pb-1" >
                           <button onClick={() => setCityFilter('')}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all
                               ${!cityFilter ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>
@@ -556,7 +556,7 @@ export default function EventPage() {
                         </div>
                       )}
                       {dates.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto mb-5 pb-1" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex gap-2 overflow-x-auto mb-5 pb-1" >
                           <button onClick={() => setDateFilter('')}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all
                               ${!dateFilter ? 'bg-secondary text-on-secondary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>

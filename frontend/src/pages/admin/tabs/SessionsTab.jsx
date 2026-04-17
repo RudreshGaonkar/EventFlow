@@ -82,7 +82,7 @@ export default function SessionsTab() {
             Select Event
           </label>
           <select value={selEvent} onChange={e => setSelEvent(e.target.value)}
-            className="w-full px-4 py-2.5 bg-surface-container text-white rounded-xl text-sm outline-none border border-outline-variant/20">
+            className="w-full px-4 py-2.5 bg-surface-container text-on-surface rounded-xl text-sm outline-none border border-outline-variant/20">
             <option value="">— choose an event —</option>
             {events.map(e => <option key={e.event_id} value={e.event_id}>{e.title}</option>)}
           </select>
@@ -124,7 +124,7 @@ export default function SessionsTab() {
 
           s.status === 'Scheduled' ? (
             <select onChange={e => handleStatus(s.session_id, e.target.value)} defaultValue=""
-              className="px-2 py-1 bg-surface-container-highest text-white rounded-lg text-xs outline-none">
+              className="px-2 py-1 bg-surface-container-highest text-on-surface rounded-lg text-xs outline-none">
               <option value="" disabled>Change</option>
               <option value="Ongoing">Ongoing</option>
               <option value="Completed">Completed</option>
@@ -139,7 +139,7 @@ export default function SessionsTab() {
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">Venue *</label>
           <select value={form.venue_id} onChange={set('venue_id')}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
             <option value="">Select Venue</option>
             {venues.map(v => <option key={v.venue_id} value={v.venue_id}>{v.venue_name} — {v.city_name}</option>)}
           </select>

@@ -77,12 +77,12 @@ export default function VenuesTab() {
               <div key={v.venue_id}
                 className="flex items-center justify-between bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-on-surface">
                     {v.venue_name}
                     <span className="ml-2 text-xs text-on-surface-variant">— {v.city_name}</span>
                   </p>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    Submitted by <span className="text-white">{v.owner_name}</span> · {v.owner_email}
+                    Submitted by <span className="text-on-surface">{v.owner_name}</span> · {v.owner_email}
                   </p>
                   {v.address && <p className="text-xs text-on-surface-variant">{v.address}</p>}
                 </div>
@@ -104,7 +104,7 @@ export default function VenuesTab() {
       <AdminTable title="Venues" onAdd={openAdd} loading={loading}
         columns={['Venue', 'City', 'Capacity', 'Status', 'Actions']}
         rows={venues.map(v => [
-          <div><p className="font-medium text-white text-sm">{v.venue_name}</p><p className="text-xs text-on-surface-variant truncate max-w-[200px]">{v.address}</p></div>,
+          <div><p className="font-medium text-on-surface text-sm">{v.venue_name}</p><p className="text-xs text-on-surface-variant truncate max-w-[200px]">{v.address}</p></div>,
           v.city_name,
           v.total_capacity?.toLocaleString(),
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${v.is_active ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}>
@@ -121,7 +121,7 @@ export default function VenuesTab() {
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/70">City</label>
           <select value={form.city_id} onChange={e => setForm(f => ({ ...f, city_id: e.target.value }))}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none">
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none">
             <option value="">Select City</option>
             {cities.map(c => <option key={c.city_id} value={c.city_id}>{c.city_name}</option>)}
           </select>

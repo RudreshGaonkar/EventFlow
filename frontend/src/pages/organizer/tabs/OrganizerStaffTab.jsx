@@ -38,11 +38,11 @@ function SearchableSelect({ label, options, value, onChange, valueKey, labelKey,
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Type to search..."
-              className="flex-1 bg-transparent text-sm text-white outline-none placeholder-on-surface-variant"
+              className="flex-1 bg-transparent text-sm text-on-surface outline-none placeholder-on-surface-variant"
               onClick={e => e.stopPropagation()}
             />
           ) : (
-            <span className={`flex-1 text-sm truncate ${selected ? 'text-white' : 'text-on-surface-variant'}`}>
+            <span className={`flex-1 text-sm truncate ${selected ? 'text-on-surface' : 'text-on-surface-variant'}`}>
               {selected ? selected[labelKey] : placeholder}
             </span>
           )}
@@ -151,7 +151,7 @@ export default function OrganizerStaffTab() {
         columns={['Name / Email', 'Phone', 'Assigned Venue', 'Status']}
         rows={staff.map(m => [
           <div>
-            <p className="font-medium text-white">{m.full_name}</p>
+            <p className="font-medium text-on-surface">{m.full_name}</p>
             <p className="text-xs text-on-surface-variant">{m.email}</p>
           </div>,
 
@@ -216,7 +216,7 @@ export default function OrganizerStaffTab() {
           <div className="flex items-center gap-2 bg-surface-container-highest rounded-xl px-4 py-3 text-sm">
             <MapPin size={14} className="text-primary shrink-0" />
             <span className="text-on-surface-variant">Current:</span>
-            <span className="text-white font-medium">{selectedMember.venue_name}</span>
+            <span className="text-on-surface font-medium">{selectedMember.venue_name}</span>
           </div>
         )}
         <SearchableSelect

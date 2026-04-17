@@ -54,7 +54,7 @@ function StatePickerModal({ states, onSelect, onSkip }) {
           <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Navigation size={24} className="text-primary" />
           </div>
-          <h2 className="text-xl font-extrabold text-white mb-1">Select Your State</h2>
+          <h2 className="text-xl font-extrabold text-on-surface mb-1">Select Your State</h2>
           <p className="text-sm text-on-surface-variant">
             National events are visible to everyone. Select your state to also
             see local events &amp; shows.
@@ -70,7 +70,7 @@ function StatePickerModal({ states, onSelect, onSkip }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search state..."
-              className="w-full pl-9 pr-4 py-2.5 bg-surface-container-highest text-white rounded-xl
+              className="w-full pl-9 pr-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl
                 text-sm outline-none border border-outline-variant focus:border-primary/50 transition-all"
             />
           </div>
@@ -163,7 +163,7 @@ function EventCard({ event }) {
         )}
 
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <p className="text-white font-semibold text-xs leading-tight truncate">{event.title}</p>
+          <p className="text-on-surface font-semibold text-xs leading-tight truncate">{event.title}</p>
           <div className="flex items-center justify-between mt-1.5">
             <span className="text-[10px] text-on-surface-variant">
               {event.language || event.event_type}
@@ -215,12 +215,12 @@ function EventRow({ title, events, icon: Icon, emptyHidden = true }) {
           <div className="flex gap-2">
             <button onClick={() => scroll(-1)}
               className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary text-on-surface-variant
-                hover:text-white flex items-center justify-center transition-all">
+                hover:text-on-surface flex items-center justify-center transition-all">
               <ChevronLeft size={15} />
             </button>
             <button onClick={() => scroll(1)}
               className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary text-on-surface-variant
-                hover:text-white flex items-center justify-center transition-all">
+                hover:text-on-surface flex items-center justify-center transition-all">
               <ChevronRight size={15} />
             </button>
           </div>
@@ -234,7 +234,7 @@ function EventRow({ title, events, icon: Icon, emptyHidden = true }) {
           No {title.toLowerCase()} available in your area right now
         </div>
       ) : (
-        <div ref={ref} className="flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+        <div ref={ref} className="flex gap-4 overflow-x-auto pb-2" >
           {events.map(e => <EventCard key={e.event_id} event={e} />)}
         </div>
       )}
@@ -306,7 +306,7 @@ function HeroSlider({ events }) {
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight mb-2">{ev.title}</h1>
+              <h1 className="text-3xl sm:text-5xl font-extrabold text-on-surface leading-tight mb-2">{ev.title}</h1>
               <p className="text-sm text-on-surface-variant mb-5">
                 {ev.language}{ev.duration_mins ? ` · ${ev.duration_mins} min` : ''}
                 {ev.genre ? ` · ${ev.genre}` : ''}
@@ -328,13 +328,13 @@ function HeroSlider({ events }) {
       {/* Arrows */}
       <button onClick={() => { clearInterval(timerRef.current); go(current - 1); }}
         className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
-          bg-black/40 backdrop-blur-sm text-white flex items-center justify-center
+          bg-black/40 backdrop-blur-sm text-on-surface flex items-center justify-center
           opacity-0 group-hover:opacity-100 hover:bg-primary transition-all">
         <ChevronLeft size={18} />
       </button>
       <button onClick={() => { clearInterval(timerRef.current); go(current + 1); }}
         className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
-          bg-black/40 backdrop-blur-sm text-white flex items-center justify-center
+          bg-black/40 backdrop-blur-sm text-on-surface flex items-center justify-center
           opacity-0 group-hover:opacity-100 hover:bg-primary transition-all">
         <ChevronRight size={18} />
       </button>
@@ -530,7 +530,7 @@ export default function BrowsePage() {
         </div>
 
         {/* ── Category Pills ── */}
-        <div className="flex gap-3 overflow-x-auto pb-2 mb-8" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex gap-3 overflow-x-auto pb-2 mb-8" >
           <button onClick={() => setActiveType('')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold
               whitespace-nowrap transition-all shrink-0 ${!activeType

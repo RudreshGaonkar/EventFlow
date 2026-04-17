@@ -128,7 +128,7 @@ export default function OrganizerSessionsTab() {
         <select
           value={selEvent}
           onChange={e => setSelEvent(e.target.value)}
-          className="flex-1 max-w-xs px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+          className="flex-1 max-w-xs px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
         >
           <option value="">Select an event...</option>
           {events.map(e => <option key={e.event_id} value={e.event_id}>{e.title}</option>)}
@@ -136,7 +136,7 @@ export default function OrganizerSessionsTab() {
         {selEvent && (
           <button
             onClick={() => { setForm(BLANK); setModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
           >
             <CalendarClock size={15} />
             Add Session
@@ -164,7 +164,7 @@ export default function OrganizerSessionsTab() {
               defaultValue={s.demand_multiplier}
               step="0.1" min="0.1" max="10"
               onBlur={e => handleMultiplier(s.session_id, e.target.value)}
-              className="w-20 px-2 py-1 bg-surface-container-highest text-white rounded-lg text-xs outline-none"
+              className="w-20 px-2 py-1 bg-surface-container-highest text-on-surface rounded-lg text-xs outline-none"
             />,
             <select
               value={s.status}
@@ -192,7 +192,7 @@ export default function OrganizerSessionsTab() {
           <select
             value={form.venue_id}
             onChange={set('venue_id')}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
           >
             <option value="">Select Venue</option>
             {venues.map(v => (

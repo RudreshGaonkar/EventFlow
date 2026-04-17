@@ -1,64 +1,78 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Surfaces ── */
-  --color-surface-container-lowest:  #0a0e1a;
-  --color-surface-container-low:     #171b28;
-  --color-surface-container:         #1b1f2c;
-  --color-surface-container-high:    #262a37;
-  --color-surface-container-highest: #313442;
-  --color-surface-variant:           #313442;
-  --color-surface:                   #0f131f;
-  --color-background:                #0f131f;
+  /* ── Core Backgrounds ── */
+  --color-surface-container-lowest: #000000;
+  --color-background: #141414;
+  --color-surface: #141414;
 
-  /* ── Primary ── */
-  --color-primary:                   #3563E8;
-  --color-primary-container:         #1a3a8f;
-  --color-on-primary:                #ffffff;
-  --color-on-primary-container:      #c8d8ff;
-  --color-inverse-primary:           #6474B8;
+  /* ── Surface Elevations ── */
+  --color-surface-container-low: #181818;
+  --color-surface-container: #222222;
+  --color-surface-container-high: #2a2a2a;
+  --color-surface-container-highest: #333333;
+  --color-surface-variant: #333333;
 
-  /* ── Secondary ── */
-  --color-secondary:                 #6474B8;
-  --color-secondary-container:       #2e3a6e;
-  --color-on-secondary:              #ffffff;
-  --color-on-secondary-container:    #d0d8ff;
+  /* ── Primary Accent (Monochrome) ── */
+  --color-primary: #ffffff;
+  --color-primary-container: #333333;
+  --color-on-primary: #000000;
+  --color-on-primary-container: #ffffff;
+  --color-inverse-primary: #000000;
 
-  /* ── Tertiary ── */
-  --color-tertiary:                  #797391;
-  --color-tertiary-container:        #3a3550;
-  --color-on-tertiary:               #ffffff;
-  --color-on-tertiary-container:     #e0dcf0;
+  /* ── Secondary (Light Grays) ── */
+  --color-secondary: #cccccc;
+  --color-secondary-container: #2a2a2a;
+  --color-on-secondary: #000000;
+  --color-on-secondary-container: #ffffff;
 
-  /* ── Error ── */
-  --color-error:                     #ffb4ab;
-  --color-error-container:           #93000a;
-  --color-on-error:                  #690005;
-  --color-on-error-container:        #ffdad6;
+  /* ── Tertiary (Medium Grays) ── */
+  --color-tertiary: #888888;
+  --color-tertiary-container: #222222;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #cccccc;
 
-  /* ── Text ── */
-  --color-on-surface:                #dfe2f3;
-  --color-on-surface-variant:        #8a8fa8;
-  --color-on-background:             #dfe2f3;
+  /* ── Semantic System & Feedback ── */
+  --color-success: #00C853;
+  --color-error: #ff1744;
+  --color-error-container: #450000;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #ffb4ab;
+  --color-warning: #FFD600;
+  --color-info: #2979FF;
+
+  /* ── Text Rendering ── */
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #b3b3b3;
+  --color-on-background: #ffffff;
 
   /* ── Borders ── */
-  --color-outline:                   #3d4266;
-  --color-outline-variant:           #2a2f4a;
-  --color-surface-tint:              #3563E8;
+  --color-outline: #333333;
+  --color-outline-variant: #222222;
+  --color-surface-tint: #ffffff;
+
+  /* ── Dark Theme Shadows ── */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.8), 0 2px 4px -2px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8), 0 4px 6px -4px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.8), 0 8px 10px -6px rgba(0, 0, 0, 0.8);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
 
   /* ── Typography ── */
   --font-headline: "Plus Jakarta Sans", sans-serif;
-  --font-body:     "Inter", sans-serif;
-  --font-mono:     "JetBrains Mono", monospace;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
   /* ── Border Radius ── */
-  --radius-2xl:  1.5rem;
-  --radius-3xl:  1.75rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 1.75rem;
   --radius-full: 9999px;
 }
 
 /* Base styles */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -70,7 +84,19 @@ body {
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar       { width: 4px; }
-::-webkit-scrollbar-track { background: var(--color-surface-container-lowest); }
-::-webkit-scrollbar-thumb { background: var(--color-surface-container-highest); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-lowest);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-container-highest);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}

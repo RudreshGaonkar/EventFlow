@@ -90,12 +90,49 @@ const findStaffByOrganizerVenues = async (organizer_id) => {
 };
 
 
+// ── Sessions for staff's assigned venues ─────────────────────────────────────
+//
+// Returns today's + upcoming sessions (within next 24 h) at every venue
+// the logged-in staff member is assigned to via user_venues.
+const findSessionsByUserVenues = async (user_id) => {
+  const [rows] = await getPool().query(
+    `SELECT
+       es.session_id,
+       es.show_date,
+       es.show_time,
+       es.status,
+       es.booked_seats,
+       es.total_seats,
+       pe.title       AS event_title,
+       pe.event_type,
+       pe.poster_url,
+       v.venue_id,
+       v.venue_name,
+       v.address,
+       c.city_name
+     FROM user_venues uv
+     JOIN venues         v  ON v.venue_id  = uv.venue_id
+     JOIN cities         c  ON c.city_id   = v.city_id
+     JOIN event_sessions es ON es.venue_id  = v.venue_id
+     JOIN parent_events  pe ON pe.event_id  = es.event_id
+     WHERE uv.user_id = ?
+       AND es.show_date >= CURDATE()
+       AND es.show_date <= DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+       AND es.status NOT IN ('Cancelled', 'Completed')
+     ORDER BY es.show_date ASC, es.show_time ASC`,
+    [user_id]
+  );
+  return rows;
+};
+
+
 module.exports = {
   createStaffMember,
   findAllStaff,
   findStaffMemberById,
   setActiveStatus,
   assignStaffVenue,
-  findVenueById,             
+  findVenueById,
   findStaffByOrganizerVenues,
-};
+  findSessionsByUserVenues,
+};

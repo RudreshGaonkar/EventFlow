@@ -56,7 +56,7 @@ export default function AdminPage() {
           <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/50">
             Admin Panel
           </p>
-          <h2 className="text-base font-extrabold text-white font-headline mt-0.5">
+          <h2 className="text-base font-extrabold text-on-surface font-headline mt-0.5">
             EventFlow
           </h2>
         </div>
@@ -71,10 +71,10 @@ export default function AdminPage() {
                 font-medium transition-all group
                 ${active === key
                   ? 'bg-primary-container/20 text-primary'
-                  : 'text-on-surface-variant hover:text-white hover:bg-surface-container'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                 }`}
             >
-              <Icon size={17} className={active === key ? 'text-primary' : 'text-on-surface-variant group-hover:text-white'} />
+              <Icon size={17} className={active === key ? 'text-primary' : 'text-on-surface-variant group-hover:text-on-surface'} />
               {label}
               {active === key && (
                 <ChevronRight size={14} className="ml-auto text-primary" />
@@ -98,11 +98,11 @@ export default function AdminPage() {
         <div className="lg:hidden flex items-center gap-3 px-5 py-4 border-b border-outline-variant/10">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="text-on-surface-variant hover:text-white"
+            className="text-on-surface-variant hover:text-on-surface"
           >
             <Menu size={20} />
           </button>
-          <h1 className="font-headline font-bold text-white capitalize">{active}</h1>
+          <h1 className="font-headline font-bold text-on-surface capitalize">{active}</h1>
         </div>
 
         <AnimatePresence mode="wait">

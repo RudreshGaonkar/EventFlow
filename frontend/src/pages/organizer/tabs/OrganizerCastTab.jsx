@@ -96,14 +96,14 @@ export default function OrganizerCastTab() {
         <select
           value={selEvent}
           onChange={e => setSelEvent(e.target.value)}
-          className="flex-1 max-w-xs px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+          className="flex-1 max-w-xs px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
         >
           <option value="">Select an event...</option>
           {events.map(e => <option key={e.event_id} value={e.event_id}>{e.title}</option>)}
         </select>
         <button
           onClick={() => { setPersonForm(BLANK_PERSON); setPersonModal({ mode: 'add' }); }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-surface-container text-on-surface-variant text-sm font-semibold rounded-xl hover:text-white hover:bg-surface-container-highest transition-all"
+          className="flex items-center gap-2 px-4 py-2.5 bg-surface-container text-on-surface-variant text-sm font-semibold rounded-xl hover:text-on-surface hover:bg-surface-container-highest transition-all"
         >
           <UserPlus size={15} />
           New Person
@@ -111,7 +111,7 @@ export default function OrganizerCastTab() {
         {selEvent && (
           <button
             onClick={() => { setCastForm(BLANK_CAST); setCastModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
           >
             <Plus size={15} />
             Add to Cast
@@ -137,7 +137,7 @@ export default function OrganizerCastTab() {
                     {c.real_name?.slice(0, 2).toUpperCase()}
                   </div>
               }
-              <span className="text-sm font-medium text-white">{c.real_name}</span>
+              <span className="text-sm font-medium text-on-surface">{c.real_name}</span>
             </div>,
             <span className="text-xs px-2 py-0.5 bg-primary/15 text-primary rounded-full font-semibold">{c.role_type}</span>,
             c.character_name || c.designation || '—',
@@ -184,7 +184,7 @@ export default function OrganizerCastTab() {
           <select
             value={castForm.person_id}
             onChange={sc('person_id')}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
           >
             <option value="">Select person...</option>
             {people.map(p => <option key={p.person_id} value={p.person_id}>{p.real_name}</option>)}
@@ -195,7 +195,7 @@ export default function OrganizerCastTab() {
           <select
             value={castForm.role_type}
             onChange={sc('role_type')}
-            className="w-full px-4 py-2.5 bg-surface-container-highest text-white rounded-xl text-sm outline-none"
+            className="w-full px-4 py-2.5 bg-surface-container-highest text-on-surface rounded-xl text-sm outline-none"
           >
             {ROLE_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>

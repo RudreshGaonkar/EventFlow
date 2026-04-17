@@ -53,7 +53,7 @@ export default function RoleRequestsTab() {
       {/* Header & Search */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div>
-          <h2 className="text-xl font-bold text-white">Role Requests</h2>
+          <h2 className="text-xl font-bold text-on-surface">Role Requests</h2>
           <p className="text-sm text-on-surface-variant">Review and approve role upgrades</p>
         </div>
         <div className="relative w-full sm:w-64">
@@ -64,7 +64,7 @@ export default function RoleRequestsTab() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-surface-container border border-outline-variant rounded-xl
-              text-sm text-white focus:border-primary outline-none"
+              text-sm text-on-surface focus:border-primary outline-none"
           />
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function RoleRequestsTab() {
                 </span>
                 <span className="text-xs text-on-surface-variant">{new Date(req.requested_at).toLocaleString()}</span>
               </div>
-              <p className="text-base font-bold text-white">{req.full_name}</p>
+              <p className="text-base font-bold text-on-surface">{req.full_name}</p>
               <p className="text-sm text-on-surface-variant">{req.email} • {req.phone}</p>
             </div>
 
@@ -113,11 +113,11 @@ export default function RoleRequestsTab() {
               {rejectId === req.user_role_id ? (
                 <div className="space-y-2 w-full">
                   <input type="text" placeholder="Reason..." value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-background border border-outline-variant rounded text-white" />
+                    className="w-full px-3 py-1.5 text-xs bg-background border border-outline-variant rounded text-on-surface" />
                   <div className="flex gap-2">
                     <button onClick={() => handleAction(req.user_role_id, 'reject', rejectReason)} disabled={processing === req.user_role_id || !rejectReason}
-                      className="flex-1 py-1.5 text-xs bg-error text-white rounded font-medium">Confirm</button>
-                    <button onClick={() => setRejectId(null)} className="flex-1 py-1.5 text-xs bg-surface-container-highest text-white rounded font-medium">Cancel</button>
+                      className="flex-1 py-1.5 text-xs bg-error text-on-surface rounded font-medium">Confirm</button>
+                    <button onClick={() => setRejectId(null)} className="flex-1 py-1.5 text-xs bg-surface-container-highest text-on-surface rounded font-medium">Cancel</button>
                   </div>
                 </div>
               ) : (
@@ -154,7 +154,7 @@ export default function RoleRequestsTab() {
             />
             <button
               onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 transition-all"
+              className="absolute top-4 right-4 p-2 bg-black/50 text-on-surface rounded-full hover:bg-white/20 transition-all"
             >
               <X size={24} />
             </button>

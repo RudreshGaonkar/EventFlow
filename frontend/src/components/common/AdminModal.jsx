@@ -24,8 +24,8 @@ export default function AdminModal({ open, title, onClose, onSave, saving, child
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/10">
-              <h3 className="font-headline font-bold text-white text-base">{title}</h3>
-              <button onClick={onClose} className="text-on-surface-variant hover:text-white transition-colors">
+              <h3 className="font-headline font-bold text-on-surface text-base">{title}</h3>
+              <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface transition-colors">
                 <X size={18} />
               </button>
             </div>
@@ -37,7 +37,7 @@ export default function AdminModal({ open, title, onClose, onSave, saving, child
             <div className="flex gap-3 px-6 py-4 border-t border-outline-variant/10">
               <button onClick={onClose}
                 className="flex-1 py-2.5 text-sm font-semibold text-on-surface-variant
-                  bg-surface-container-high rounded-xl hover:text-white transition-all">
+                  bg-surface-container-high rounded-xl hover:text-on-surface transition-all">
                 Cancel
               </button>
               <button onClick={onSave} disabled={saving}

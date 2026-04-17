@@ -8,12 +8,15 @@ const { scanTicket } = require('./service');
 router.post(
   '/validate',
   protect,
-  allowRoles('Venue Staff'),
+  allowRoles('Venue Staff', 'System Admin'),
   [
     body('ticket_uuid')
       .trim()
       .notEmpty().withMessage('Ticket UUID is required')
-      .isUUID().withMessage('Invalid ticket UUID format')
+      .isUUID().withMessage('Invalid ticket UUID format'),
+    body('session_id')
+      .notEmpty().withMessage('session_id is required')
+      .isInt({ min: 1 }).withMessage('session_id must be a positive integer'),
   ],
   validate,
   scanTicket

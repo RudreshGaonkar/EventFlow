@@ -49,8 +49,8 @@ const Field = ({ label, rightSlot, icon: Icon, error, ...props }) => (
       </span>
       <input
         className={`w-full pl-10 pr-4 py-2.5 bg-surface-container-highest border-none
-          focus:ring-2 focus:ring-primary/50 text-white rounded-2xl transition-all
-          placeholder:text-outline-variant outline-none text-sm
+          focus:ring-2 focus:ring-primary/50 text-on-surface rounded-2xl transition-all
+          placeholder:text-on-surface-variant outline-none text-sm
           ${error ? 'ring-2 ring-error/60' : ''}`}
         {...props}
       />
@@ -79,15 +79,15 @@ const PasswordField = ({ label, rightSlot, error, show, onToggle, ...props }) =>
         type={show ? 'text' : 'password'}
         placeholder="••••••••"
         className={`w-full pl-10 pr-10 py-2.5 bg-surface-container-highest border-none
-          focus:ring-2 focus:ring-primary/50 text-white rounded-2xl transition-all
-          placeholder:text-outline-variant outline-none text-sm
+          focus:ring-2 focus:ring-primary/50 text-on-surface rounded-2xl transition-all
+          placeholder:text-on-surface-variant outline-none text-sm
           ${error ? 'ring-2 ring-error/60' : ''}`}
         {...props}
       />
       <button
         type="button"
         onClick={onToggle}
-        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-white transition-colors"
+        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors"
       >
         {show ? <EyeOff size={15} /> : <Eye size={15} />}
       </button>
@@ -187,7 +187,7 @@ export default function LoginPage() {
         >
           <div className="flex items-center gap-3">
             <Ticket size={30} className="text-primary" fill="currentColor" />
-            <h1 className="font-headline text-3xl font-extrabold tracking-tighter text-white">EventFlow</h1>
+            <h1 className="font-headline text-3xl font-extrabold tracking-tighter text-on-surface">EventFlow</h1>
           </div>
           <p className="mt-2 text-sm text-on-surface-variant/80 font-headline font-medium">
             Book moments. Live experiences.
@@ -206,7 +206,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, x: -24 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + i * 0.13, duration: 0.45 }}
-              style={{ marginLeft: `${i * 120}px` }}
+              style={ { marginLeft: `${i * 120}px` } }
               className="w-96 bg-surface-container-high/40 backdrop-blur-md rounded-2xl
                 hover:scale-105 transition-transform duration-500 shadow-2xl p-1"
             >
@@ -224,7 +224,7 @@ export default function LoginPage() {
                       {card.badge}
                     </span>
                   )}
-                  <p className="font-headline font-bold text-xs leading-tight text-white drop-shadow">
+                  <p className="font-headline font-bold text-xs leading-tight text-on-surface drop-shadow">
                     {card.title}
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="absolute top-5 left-5 lg:hidden flex items-center gap-2">
           <Ticket size={20} className="text-primary" fill="currentColor" />
-          <h1 className="font-headline text-lg font-extrabold text-white">EventFlow</h1>
+          <h1 className="font-headline text-lg font-extrabold text-on-surface">EventFlow</h1>
         </div>
 
         <motion.div
@@ -269,7 +269,7 @@ export default function LoginPage() {
 
             {/* Header */}
             <div className="text-center mb-5">
-              <h2 className="font-headline text-xl font-extrabold text-white mb-0.5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface mb-0.5">
                 {tab === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
               <p className="text-on-surface-variant text-xs">
@@ -289,7 +289,7 @@ export default function LoginPage() {
                   className={`flex-1 py-1.5 text-xs font-semibold rounded-full transition-all ${
                     tab === key
                       ? 'bg-primary-container text-on-primary-container shadow-lg'
-                      : 'text-on-surface-variant hover:text-white'
+                      : 'text-on-surface-variant hover:text-on-surface'
                   }`}
                 >
                   {label}
@@ -452,10 +452,9 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 mt-1 bg-gradient-to-r from-primary-container to-[#6C63FF]
-                  text-white font-bold rounded-2xl font-headline text-sm tracking-wide
-                  shadow-[0px_12px_28px_rgba(108,99,255,0.25)]
-                  hover:shadow-[0px_12px_28px_rgba(108,99,255,0.4)]
+                className="w-full py-3 mt-1 bg-primary text-on-primary
+                  hover:bg-primary-container hover:text-on-primary-container
+                  font-bold rounded-2xl font-headline text-sm tracking-wide
                   disabled:opacity-50 disabled:cursor-not-allowed
                   flex items-center justify-center gap-2 transition-all"
               >
@@ -471,7 +470,7 @@ export default function LoginPage() {
           <footer className="flex justify-center gap-5 mt-4">
             {['Privacy Policy', 'Terms of Service', 'Help Center'].map(link => (
               <a key={link} href="#"
-                className="text-[11px] font-semibold text-on-surface-variant hover:text-white transition-colors">
+                className="text-[11px] font-semibold text-on-surface-variant hover:text-on-surface transition-colors">
                 {link}
               </a>
             ))}
