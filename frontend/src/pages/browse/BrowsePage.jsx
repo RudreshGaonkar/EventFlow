@@ -276,7 +276,7 @@ function HeroSlider({ events }) {
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-      <div className="absolute inset-0 flex items-end pb-14">
+      <div className="absolute inset-0 flex items-end pb-8 sm:pb-14">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-8 items-end">
             {ev.poster_url && (
@@ -327,13 +327,13 @@ function HeroSlider({ events }) {
 
       {/* Arrows */}
       <button onClick={() => { clearInterval(timerRef.current); go(current - 1); }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full
           bg-black/40 backdrop-blur-sm text-on-surface flex items-center justify-center
           opacity-0 group-hover:opacity-100 hover:bg-primary transition-all">
         <ChevronLeft size={18} />
       </button>
       <button onClick={() => { clearInterval(timerRef.current); go(current + 1); }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full
           bg-black/40 backdrop-blur-sm text-on-surface flex items-center justify-center
           opacity-0 group-hover:opacity-100 hover:bg-primary transition-all">
         <ChevronRight size={18} />
@@ -471,7 +471,7 @@ export default function BrowsePage() {
           {/* City selector */}
           {stateCities.length > 1 && (
             <div className="flex items-center gap-2 bg-surface-container px-4 py-3 rounded-2xl
-              min-w-[140px] border border-outline-variant hover:border-primary/30 transition-all">
+              min-w-[140px] w-full sm:w-auto border border-outline-variant hover:border-primary/30 transition-all">
               <MapPin size={15} className="text-primary shrink-0" />
               <select value={cityId} onChange={e => setCityId(e.target.value)}
                 className="bg-transparent text-sm text-on-surface outline-none w-full appearance-none cursor-pointer">
@@ -484,7 +484,7 @@ export default function BrowsePage() {
           )}
 
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative w-full">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" />
             <input
               value={search}

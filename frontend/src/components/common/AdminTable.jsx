@@ -27,7 +27,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
             <thead>
               <tr className="border-b border-outline-variant/10">
                 {columns.map((col, i) => (
-                  <th key={i} className="px-4 py-3 text-left text-[10px] font-bold uppercase
+                  <th key={i} className="px-3 py-2.5 sm:px-4 sm:py-3 text-left text-[9px] sm:text-[10px] font-bold uppercase
                     tracking-widest text-on-surface-variant/60">
                     {col}
                   </th>
@@ -39,7 +39,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
                 ? Array(5).fill(0).map((_, i) => (
                     <tr key={i} className="border-b border-outline-variant/10 last:border-0">
                       {columns.map((_, j) => (
-                        <td key={j} className="px-4 py-3">
+                        <td key={j} className="px-3 py-2.5 sm:px-4 sm:py-3">
                           <div className="h-4 bg-surface-container-high rounded animate-pulse" />
                         </td>
                       ))}
@@ -50,7 +50,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
                   : rows.map((row, i) => (
                       <tr key={i} className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-high/50 transition-colors">
                         {row.map((cell, j) => (
-                          <td key={j} className="px-4 py-3 text-sm text-on-surface-variant whitespace-nowrap">
+                          <td key={j} className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-on-surface-variant whitespace-nowrap">
                             {cell}
                           </td>
                         ))}

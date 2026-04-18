@@ -349,10 +349,10 @@ export default function EventPage() {
             <ChevronLeft size={16} /> Back
           </button>
 
-          <div className="flex gap-6 sm:gap-8 items-start">
+          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start text-center sm:text-left">
 
             {/* Poster */}
-            <div className="shrink-0 w-28 sm:w-40 rounded-2xl overflow-hidden
+            <div className="shrink-0 w-32 sm:w-40 rounded-2xl overflow-hidden
               shadow-2xl shadow-black/60 ring-1 ring-white/10">
               {event.poster_url
                 ? <img src={event.poster_url} alt={event.title} className="w-full aspect-[2/3] object-cover" />
@@ -365,7 +365,7 @@ export default function EventPage() {
             {/* Details */}
             <div className="flex-1 pt-2 min-w-0">
               {/* Badges row */}
-              <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
                 <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-bold border border-primary/30">
                   {event.event_type}
                 </span>
@@ -398,7 +398,7 @@ export default function EventPage() {
                 {event.title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mb-5">
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 mb-5">
                 {event.duration_mins && (
                   <span className="flex items-center gap-1.5 text-sm text-on-surface-variant">
                     <Clock size={13} className="text-primary" />
@@ -421,7 +421,7 @@ export default function EventPage() {
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-3 mt-5">
+              <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
                 {event.trailer_url && (
                   <a href={event.trailer_url} target="_blank" rel="noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container
@@ -538,7 +538,7 @@ export default function EventPage() {
                   {isBookingEvent && (
                     <>
                       {cities.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto mb-3 pb-1" >
+                        <div className="flex gap-2 overflow-x-auto mb-3 pb-1 slim-scroll" >
                           <button onClick={() => setCityFilter('')}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all
                               ${!cityFilter ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>
@@ -556,7 +556,7 @@ export default function EventPage() {
                         </div>
                       )}
                       {dates.length > 1 && (
-                        <div className="flex gap-2 overflow-x-auto mb-5 pb-1" >
+                        <div className="flex gap-2 overflow-x-auto mb-5 pb-1 slim-scroll" >
                           <button onClick={() => setDateFilter('')}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 transition-all
                               ${!dateFilter ? 'bg-secondary text-on-secondary' : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>

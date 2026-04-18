@@ -541,7 +541,7 @@ export default function ProfilePage() {
             {/* ── Hero Banner ── */}
             <div className="bg-surface-container border-b border-outline-variant">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                    <div className="flex items-end gap-5">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
 
                         {/* Avatar */}
                         <div className="relative shrink-0">
@@ -572,7 +572,7 @@ export default function ProfilePage() {
                         <div className="flex-1 min-w-0 pb-1">
                             <h1 className="text-xl sm:text-2xl font-extrabold text-on-surface truncate">{profile.fullname}</h1>
                             <p className="text-sm text-on-surface-variant">{profile.email}</p>
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-2">
                                 <span className="text-10px font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                                     {profile.rolename || 'Attendee'}
                                 </span>
@@ -586,7 +586,7 @@ export default function ProfilePage() {
                         {/* Logout */}
                         <button onClick={handleLogout}
                             className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-error
-                border border-error/20 rounded-xl hover:bg-error/5 transition-all shrink-0 self-start">
+                border border-error/20 rounded-xl hover:bg-error/5 transition-all shrink-0 sm:self-start">
                             <LogOut size={13} /> Logout
                         </button>
                     </div>
@@ -645,7 +645,7 @@ export default function ProfilePage() {
                         <RoleRequestSection user={profile} onToast={showToast} />
 
                         {/* Stats */}
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             {[
                                 { label: 'Bookings', value: bookings.length, icon: Ticket },
                                 { label: 'Registered', value: regs.length, icon: ClipboardList },
@@ -670,7 +670,7 @@ export default function ProfilePage() {
                     {/* ── RIGHT: Activity ── */}
                     <div className="lg:col-span-3">
                         {/* Tabs */}
-                        <div className="flex gap-2 overflow-x-auto pb-1 mb-5" >
+                        <div className="flex gap-2 overflow-x-auto pb-1 mb-5 slim-scroll" >
                             <Tab active={activeTab === 'bookings'} onClick={() => setActiveTab('bookings')}
                                 icon={Ticket} label="Bookings" count={bookings.length} />
                             <Tab active={activeTab === 'regs'} onClick={() => setActiveTab('regs')}

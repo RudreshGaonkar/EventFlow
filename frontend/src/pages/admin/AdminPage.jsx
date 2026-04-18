@@ -67,7 +67,7 @@ export default function AdminPage() {
             <button
               key={key}
               onClick={() => { setActive(key); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+              className={`w-full flex items-center gap-3 px-3 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm
                 font-medium transition-all group
                 ${active === key
                   ? 'bg-primary-container/20 text-primary'
@@ -87,7 +87,7 @@ export default function AdminPage() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

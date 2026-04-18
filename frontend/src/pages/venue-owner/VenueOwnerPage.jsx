@@ -21,7 +21,7 @@ export default function VenueOwnerPage() {
           <p className="text-sm text-on-surface-variant mt-1">Manage your venues and staff</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-surface-container p-1 rounded-2xl w-fit mb-8">
+        <div className="flex items-center gap-1 bg-surface-container p-1 rounded-2xl w-full sm:w-fit overflow-x-auto whitespace-nowrap mb-8 slim-scroll">
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -38,7 +38,7 @@ export default function VenueOwnerPage() {
           ))}
         </div>
 
-        <div className="bg-surface-container rounded-3xl p-6">
+        <div className="bg-surface-container rounded-3xl p-4 sm:p-6 overflow-hidden">
           {activeTab === 'requests' && <RentalRequestList />}
           {activeTab === 'venues' && <VenueOwnerVenuesTab />}
           {activeTab === 'staff'  && <VenueOwnerStaffTab  />}

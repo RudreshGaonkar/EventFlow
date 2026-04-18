@@ -208,45 +208,76 @@ export default function Navbar() {
             exit={{    opacity: 0, height: 0      }}
             className="md:hidden bg-surface-container-lowest border-t border-outline-variant/10 px-6 pb-4"
           >
-            <div className="pt-4 space-y-1">
+            <div className="pt-6 space-y-2">
               {user ? (
                 <>
-                  <div className="flex items-center gap-3 pb-3 mb-2 border-b border-outline-variant/10">
-                    <div className="w-9 h-9 bg-primary-container rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-on-primary-container">{initials}</span>
+                  <div className="flex items-center gap-3 pb-4 mb-3 border-b border-outline-variant/10">
+                    <div className="w-10 h-10 bg-primary-container rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-on-primary-container">{initials}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-on-surface">{user.full_name}</p>
-                      <p className="text-xs text-on-surface-variant">{userRoles.join(' · ')}</p>
+                      <p className="text-base font-bold text-on-surface leading-tight">{user.full_name}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">{userRoles.join(' · ')}</p>
                     </div>
                   </div>
 
-                  {[
-                    { label: 'Browse Events',    to: '/'                 },
-                    { label: 'My Bookings',      to: '/my-bookings'      },
-                    { label: 'My Registrations', to: '/my-registrations' },
-                    { label: 'My Tickets',       to: '/my-tickets'       },
-                    { label: 'Profile',          to: '/profile'          },
-                    ...(hasRole('System Admin')    ? [{ label: 'Admin Panel',         to: '/admin'       }] : []),
-                    ...(hasRole('Event Organizer') ? [{ label: 'Organizer Dashboard', to: '/organizer'   }] : []),
-                    ...(hasRole('Venue Owner')     ? [{ label: 'My Venues',           to: '/venue-owner' }] : []),
-                    ...(hasRole('Venue Staff')     ? [{ label: 'Staff Portal',        to: '/staff'       }] : []),
-                  ].map(({ label, to }) => (
-                    <Link key={to} to={to}
-                      className="block py-2.5 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-                      {label}
-                    </Link>
-                  ))}
+                  <div className="space-y-1">
+                    {[
+                      { label: 'Browse Events',    to: '/'                 },
+                      { label: 'My Bookings',      to: '/my-bookings'      },
+                      { label: 'My Registrations', to: '/my-registrations' },
+                      { label: 'My Tickets',       to: '/my-tickets'       },
+                      { label: 'Profile',          to: '/profile'          },
+                    ].map(({ label, to }) => (
+                      <Link key={to} to={to}
+                        onClick={() => setMobileOpen(false)}
+                        className="block px-3 py-3 text-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-xl transition-colors">
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                  
+                  {userRoles.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-outline-variant/10 flex flex-col gap-2">
+                      <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1">Portals</p>
+                      {hasRole('System Admin') && (
+                        <Link to="/admin" onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-xl hover:bg-amber-400/20 transition-all">
+                          Admin Panel
+                        </Link>
+                      )}
+                      {hasRole('Event Organizer') && (
+                        <Link to="/organizer" onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-violet-400 bg-violet-400/10 border border-violet-400/20 rounded-xl hover:bg-violet-400/20 transition-all">
+                          Organizer Dashboard
+                        </Link>
+                      )}
+                      {hasRole('Venue Owner') && (
+                        <Link to="/venue-owner" onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-xl hover:bg-emerald-400/20 transition-all">
+                          My Venues
+                        </Link>
+                      )}
+                      {hasRole('Venue Staff') && (
+                        <Link to="/staff" onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-center gap-2 py-3 text-sm font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 rounded-xl hover:bg-blue-400/20 transition-all">
+                          Staff Portal
+                        </Link>
+                      )}
+                    </div>
+                  )}
 
-                  <button onClick={logout}
-                    className="block w-full text-left py-2.5 text-sm text-red-400 hover:text-red-300 transition-colors">
-                    Sign Out
-                  </button>
+                  <div className="mt-4 pt-4 border-t border-outline-variant/10">
+                    <button onClick={() => { logout(); setMobileOpen(false); }}
+                      className="block w-full text-center py-3 bg-error/10 border border-error/20 text-sm font-bold text-error rounded-xl hover:bg-error/20 transition-colors">
+                      Sign Out
+                    </button>
+                  </div>
                 </>
               ) : (
-                <button onClick={() => navigate('/login')}
-                  className="w-full py-3 bg-primary-container text-on-primary-container
-                    font-semibold rounded-2xl text-sm">
+                <button onClick={() => { setMobileOpen(false); navigate('/login'); }}
+                  className="w-full py-4 mt-2 bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container
+                    font-bold rounded-2xl text-base shadow-lg shadow-primary/20">
                   Sign In
                 </button>
               )}
