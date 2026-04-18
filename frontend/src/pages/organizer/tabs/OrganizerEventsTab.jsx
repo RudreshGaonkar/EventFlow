@@ -157,12 +157,12 @@ export default function OrganizerEventsTab() {
 
           /* Event */
           <div className="flex items-center gap-3">
-            {e.poster_url
-              ? <img src={e.poster_url} className="w-10 h-14 object-cover rounded-lg" alt={e.title} />
-              : <div className="w-10 h-14 bg-surface-container-highest rounded-lg flex items-center justify-center">
-                  <Image size={16} className="text-on-surface-variant" />
-                </div>
-            }
+            <div className={`overflow-hidden shrink-0 rounded-lg bg-surface-container-highest flex items-center justify-center
+              ${['Movie', 'Play'].includes(e.event_type) ? 'w-10 aspect-[2/3]' : 'w-14 aspect-video'}`}>
+              {e.poster_url 
+                ? <img src={e.poster_url} className="w-full h-full object-cover" alt={e.title} />
+                : <Image size={16} className="text-on-surface-variant" />}
+            </div>
             <div>
               <div className="font-medium text-on-surface text-sm">{e.title}</div>
               <div className="text-xs text-on-surface-variant">{e.language}</div>

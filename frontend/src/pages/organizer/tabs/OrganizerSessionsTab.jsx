@@ -136,7 +136,7 @@ export default function OrganizerSessionsTab() {
         {selEvent && (
           <button
             onClick={() => { setForm(BLANK); setModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-[#000000] text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
           >
             <CalendarClock size={15} />
             Add Session

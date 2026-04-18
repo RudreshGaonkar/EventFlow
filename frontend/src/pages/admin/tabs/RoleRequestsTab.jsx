@@ -76,7 +76,7 @@ export default function RoleRequestsTab() {
             No pending requests found.
           </div>
         ) : filtered.map(req => (
-          <div key={req.user_role_id} className="p-4 sm:p-5 bg-surface-container border border-outline-variant rounded-2xl flex flex-col md:flex-row gap-6 items-start">
+          <div key={req.user_role_id} className="p-4 sm:p-5 bg-surface-container hover:bg-surface-container-high transition-colors border border-outline-variant rounded-2xl flex flex-col md:flex-row gap-6 items-start">
             
             {/* User Info */}
             <div className="flex-1 space-y-1">
@@ -92,17 +92,17 @@ export default function RoleRequestsTab() {
 
             {/* Documents */}
             <div className="flex gap-4">
-              <div className="space-y-1 text-center">
+              <div className="space-y-1 text-center flex flex-col items-center">
                 <p className="text-xs font-medium text-on-surface-variant">ID Proof</p>
                 <button onClick={() => setPreviewImage(req.id_proof_url)}
-                  className="w-20 h-20 bg-surface-container-highest rounded-xl overflow-hidden border border-outline-variant hover:border-primary transition-all">
+                  className="w-24 aspect-video bg-surface-container-highest rounded-xl overflow-hidden border border-outline-variant hover:border-primary transition-all">
                   <img src={req.id_proof_url} alt="ID" className="w-full h-full object-cover" />
                 </button>
               </div>
-              <div className="space-y-1 text-center">
+              <div className="space-y-1 text-center flex flex-col items-center">
                 <p className="text-xs font-medium text-on-surface-variant">Photo</p>
                 <button onClick={() => setPreviewImage(req.photo_url)}
-                  className="w-20 h-20 bg-surface-container-highest rounded-xl overflow-hidden border border-outline-variant hover:border-primary transition-all">
+                  className="w-20 aspect-square bg-surface-container-highest rounded-xl overflow-hidden border border-outline-variant hover:border-primary transition-all">
                   <img src={req.photo_url} alt="Photo" className="w-full h-full object-cover" />
                 </button>
               </div>

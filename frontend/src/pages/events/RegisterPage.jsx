@@ -84,7 +84,6 @@ export default function RegistrationPage() {
       
       // If it's a paid registration, Razorpay order details are returned
       if (data.data?.razorpay_order_id) {
-        setSubmitting(false); // Enable UI again so modal can overlay cleanly
 
         const options = {
           key: data.data.razorpay_key,
@@ -105,12 +104,14 @@ export default function RegistrationPage() {
               navigate(`/registration/confirm?registration_id=${data.data.registration_id}`);
             } catch (err) {
               setError('Payment verification failed');
+              setSubmitting(false);
             }
           },
           theme: { color: "#6750A4" },
           modal: {
             ondismiss: function() {
               setError('Payment cancelled. Your registration is incomplete.');
+              setSubmitting(false);
             }
           }
         };
@@ -152,17 +153,19 @@ export default function RegistrationPage() {
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
 
           <div className="flex gap-4 p-5">
-            {event.poster_url ? (
-              <img
-                src={event.poster_url}
-                alt={event.title}
-                className="w-16 h-22 rounded-xl object-cover shrink-0 shadow-md"
-              />
-            ) : (
-              <div className="w-16 h-22 rounded-xl bg-surface-container-highest flex items-center justify-center text-2xl shrink-0">
-                🎯
-              </div>
-            )}
+            <div className={`overflow-hidden shrink-0 rounded-xl shadow-md ${['Movie', 'Play'].includes(event.event_type) ? 'w-16 aspect-[2/3]' : 'w-24 aspect-video'}`}>
+              {event.poster_url ? (
+                <img
+                  src={event.poster_url}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-surface-container-highest flex items-center justify-center text-2xl">
+                  {['Movie', 'Play'].includes(event.event_type) ? '🎬' : '🎯'}
+                </div>
+              )}
+            </div>
 
             <div className="min-w-0 flex flex-col justify-center gap-1.5">
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary">

@@ -82,7 +82,7 @@ export default function SeatsPage() {
 
         if (job.status === 'done') {
           clearInterval(pollRef.current);
-          setJobState('idle'); // clear UI block
+          setJobState('redirecting');
 
           const options = {
             key: job.data.razorpay_key,
@@ -104,12 +104,14 @@ export default function SeatsPage() {
                 navigate(`/booking/confirm?booking_id=${job.data.booking_id}`);
               } catch (err) {
                 setError('Payment verification failed');
+                setJobState('idle');
               }
             },
             theme: { color: "#6750A4" },
             modal: {
               ondismiss: function() {
                 setError('Payment cancelled. Your seats will be released shortly.');
+                setJobState('idle');
               }
             }
           };

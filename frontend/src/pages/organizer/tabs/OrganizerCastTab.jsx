@@ -111,7 +111,7 @@ export default function OrganizerCastTab() {
         {selEvent && (
           <button
             onClick={() => { setCastForm(BLANK_CAST); setCastModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-[#000000] text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
           >
             <Plus size={15} />
             Add to Cast

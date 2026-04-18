@@ -23,7 +23,11 @@ export default function ConfirmPage() {
   };
 
   useEffect(() => {
-    if (!booking_id) return;
+    if (!booking_id) {
+      setError('Invalid Booking ID. Please check your link.');
+      setLoading(false);
+      return;
+    }
 
     let attempt = 0;
 

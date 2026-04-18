@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 // import { TableRowSkeleton } from './components/common/LoadingSkeleton';
 
-export default function AdminTable({ title, onAdd, loading, columns, rows, hideAdd }) {
+export default function AdminTable({ title, onAdd, loading, columns, rows, hideAdd, addLabel }) {
   return (
     <div>
       {/* Header */}
@@ -13,9 +13,9 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
         {!hideAdd && onAdd && (
           <button onClick={onAdd}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary-container
-              text-on-primary-container text-sm font-semibold rounded-xl
+              text-[#000000] text-sm font-semibold rounded-xl
               hover:opacity-90 transition-all">
-            <Plus size={15} /> Add New
+            <Plus size={15} /> {addLabel || 'Add New'}
           </button>
         )}
       </div>
@@ -48,7 +48,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
                 : rows.length === 0
                   ? <tr><td colSpan={columns.length} className="px-4 py-12 text-center text-on-surface-variant text-sm">No records found</td></tr>
                   : rows.map((row, i) => (
-                      <tr key={i} className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-high/50 transition-colors">
+                      <tr key={i} className="border-b border-outline-variant/10 last:border-0 hover:bg-surface-container-high transition-colors">
                         {row.map((cell, j) => (
                           <td key={j} className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-on-surface-variant whitespace-nowrap">
                             {cell}

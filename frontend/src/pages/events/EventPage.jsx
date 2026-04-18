@@ -101,7 +101,7 @@ function SessionCard({ session, onSelect, listingDaysAhead }) {
       ) : (
         <div className="pt-3 border-t border-outline-variant/30 flex items-center justify-between">
           <span className="text-xs text-on-surface-variant">{session.city_name}</span>
-          <span className="px-3 py-1 bg-primary text-on-primary text-xs font-bold rounded-lg
+          <span className="px-3 py-1 bg-primary text-[#000000] text-xs font-bold rounded-lg
             group-hover:scale-105 transition-transform">
             Book Now →
           </span>
@@ -152,7 +152,7 @@ function RegistrationBanner({ event, onRegister }) {
         </div>
         <button
           onClick={onRegister}
-          className="shrink-0 bg-primary text-on-primary px-5 py-2.5 rounded-xl
+          className="shrink-0 bg-primary text-[#000000] px-5 py-2.5 rounded-xl
             text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
         >
           {isPaid ? 'Pay & Register' : 'Register Free'}
@@ -349,14 +349,13 @@ export default function EventPage() {
             <ChevronLeft size={16} /> Back
           </button>
 
-          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-center text-center sm:text-left">
 
             {/* Poster */}
-            <div className="shrink-0 w-32 sm:w-40 rounded-2xl overflow-hidden
-              shadow-2xl shadow-black/60 ring-1 ring-white/10">
+            <div className="w-full max-w-[280px] sm:max-w-[400px] aspect-video shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 ring-1 ring-white/10">
               {event.poster_url
-                ? <img src={event.poster_url} alt={event.title} className="w-full aspect-[2/3] object-cover" />
-                : <div className="w-full aspect-[2/3] bg-surface-container-highest flex items-center justify-center">
+                ? <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover" />
+                : <div className="w-full h-full bg-surface-container-highest flex items-center justify-center">
                   <span className="text-4xl">🎬</span>
                 </div>
               }
@@ -426,7 +425,7 @@ export default function EventPage() {
                   <a href={event.trailer_url} target="_blank" rel="noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container
                       text-on-surface text-sm font-semibold rounded-2xl border border-outline-variant
-                      hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all">
+                      hover:bg-surface-container-high transition-all">
                     <Play size={14} fill="currentColor" /> Watch Trailer
                   </a>
                 )}
@@ -434,7 +433,7 @@ export default function EventPage() {
                   <a href={event.brochure_url} target="_blank" rel="noreferrer"
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container
                       text-on-surface text-sm font-semibold rounded-2xl border border-outline-variant
-                      hover:border-secondary/40 hover:bg-secondary/10 hover:text-secondary transition-all">
+                      hover:bg-surface-container-high transition-all">
                     <FileText size={14} /> Download Brochure
                   </a>
                 )}

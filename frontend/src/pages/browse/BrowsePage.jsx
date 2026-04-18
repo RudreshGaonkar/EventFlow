@@ -2,26 +2,26 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, MapPin, ChevronLeft, ChevronRight,
-  Music, Tv, Trophy, Laugh, Ticket, Star, Clock,
+  Music, Tv, Trophy, Laugh, Ticket,
   X, Navigation, Cpu, BookOpen, Globe, Users
 } from 'lucide-react';
 import { browseEvents, getBrowseCities, getBrowseStates } from '../../services/browse';
 
 const CATEGORIES = [
-  { label: 'Movies',    icon: Tv,       type: 'Movie'     },
-  { label: 'Concerts',  icon: Music,    type: 'Concert'   },
-  { label: 'Sports',    icon: Trophy,   type: 'Sport'     },
-  { label: 'Plays',     icon: Ticket,   type: 'Play'      },
-  { label: 'Tech Fests',icon: Cpu,      type: 'Tech Fest' },
-  { label: 'Workshops', icon: BookOpen, type: 'Workshop'  },
-  { label: 'Other',     icon: Laugh,    type: 'Other'     },
+  { label: 'Movies', icon: Tv, type: 'Movie' },
+  { label: 'Concerts', icon: Music, type: 'Concert' },
+  { label: 'Sports', icon: Trophy, type: 'Sport' },
+  { label: 'Plays', icon: Ticket, type: 'Play' },
+  { label: 'Tech Fests', icon: Cpu, type: 'Tech Fest' },
+  { label: 'Workshops', icon: BookOpen, type: 'Workshop' },
+  { label: 'Other', icon: Laugh, type: 'Other' },
 ];
 
 const RATING_BADGE = {
-  G:  'bg-tertiary/20 text-tertiary',
+  G: 'bg-tertiary/20 text-tertiary',
   UA: 'bg-secondary/20 text-secondary',
-  A:  'bg-secondary-container/30 text-secondary',
-  S:  'bg-error-container/30 text-error',
+  A: 'bg-secondary-container/30 text-secondary',
+  S: 'bg-error-container/30 text-error',
 };
 
 const STATE_KEY = 'ef_selected_state';
@@ -108,30 +108,25 @@ function StatePickerModal({ states, onSelect, onSkip }) {
 
 function EventCard({ event }) {
   const navigate = useNavigate();
-  const isReg    = isRegistration(event);
-  const cta      = getCtaLabel(event);
+  const isReg = isRegistration(event);
+  const cta = getCtaLabel(event);
 
   return (
     <div
       onClick={() => navigate(`/events/${event.event_id}`)}
-      className="group relative flex-shrink-0 w-40 sm:w-44 cursor-pointer"
+      className="flex flex-col gap-3 cursor-pointer group shrink-0 snap-start w-[85vw] sm:w-[300px]"
     >
-      <div className="relative rounded-2xl overflow-hidden aspect-[2/3]
-        bg-surface-container shadow-lg
-        group-hover:-translate-y-2 group-hover:shadow-2xl group-hover:shadow-primary/20
-        transition-all duration-300">
-
+      <div className="w-full aspect-video rounded-xl overflow-hidden relative">
         {event.poster_url
-          ? <img src={event.poster_url} alt={event.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ? <img src={event.poster_url} alt={event.title} className="w-full h-full object-cover object-center block" />
           : <div className="w-full h-full flex items-center justify-center bg-surface-container-low">
-              <span className="text-5xl">{isReg ? '🎯' : '🎬'}</span>
-            </div>
+            <span className="text-5xl">{isReg ? '🎯' : '🎬'}</span>
+          </div>
         }
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
         {/* Top-left badges */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
+        <div className="absolute top-2 left-2 flex gap-1">
           {event.rating && (
             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${RATING_BADGE[event.rating] || ''}`}>
               {event.rating}
@@ -147,7 +142,7 @@ function EventCard({ event }) {
         {/* Registration badge top-right */}
         {isReg && (
           <div className="absolute top-2 right-2">
-            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/30">
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-secondary text-[#000000]">
               {event.participation_type === 'team' ? '👥 Team' : '📋 Register'}
             </span>
           </div>
@@ -155,39 +150,42 @@ function EventCard({ event }) {
 
         {/* Coming Soon badge */}
         {!event.next_show && (
-          <div className="absolute inset-0 flex items-end justify-center pb-3 pointer-events-none">
+          <div className="absolute inset-x-0 bottom-2 flex justify-center pointer-events-none">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold
-              bg-black/60 backdrop-blur-sm text-amber-400 border border-amber-400/30
+              bg-black/80 backdrop-blur-sm text-amber-400 border border-amber-400/30
               tracking-wide">✦ Coming Soon</span>
           </div>
         )}
+      </div>
 
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <p className="text-on-surface font-semibold text-xs leading-tight truncate">{event.title}</p>
-          <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[10px] text-on-surface-variant">
-              {event.language || event.event_type}
-            </span>
-            {event.next_show ? (
-              <span className="flex items-center gap-0.5 text-[9px] text-on-surface-variant">
-                <Clock size={8} />
-                {new Date(event.next_show).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              </span>
-            ) : (
-              <span className="text-[9px] text-amber-400 font-semibold">TBA</span>
-            )}
-          </div>
+      <div className="flex flex-col">
+        <p className="text-base font-semibold text-on-surface line-clamp-2 leading-tight">
+          {event.title}
+        </p>
+        <div className="text-sm text-on-surface-variant mt-1 flex items-center gap-1.5">
+          <span>{event.language || event.event_type}</span>
+          {event.next_show ? (
+            <>
+              <span className="text-[10px]">•</span>
+              <span>{new Date(event.next_show).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-[10px]">•</span>
+              <span className="text-amber-400 font-semibold">TBA</span>
+            </>
+          )}
         </div>
       </div>
 
       {/* CTA button */}
       <button
         onClick={e => { e.stopPropagation(); navigate(`/events/${event.event_id}`); }}
-        className={`mt-2 w-full py-1.5 rounded-xl text-[11px] font-semibold
-          transition-all duration-200 border
+        className={`w-full py-2 rounded-xl text-xs font-bold
+          transition-all duration-200
           ${isReg
-            ? 'bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary hover:text-on-secondary'
-            : 'bg-primary/10 text-primary border-primary/20 hover:bg-primary hover:text-on-primary'
+            ? 'bg-secondary text-[#000000] hover:brightness-110'
+            : 'bg-primary text-[#000000] hover:brightness-110'
           }`}
       >
         {cta}
@@ -196,59 +194,15 @@ function EventCard({ event }) {
   );
 }
 
-// ── Horizontal Scroll Row ─────────────────────────────────────────────────────
 
-function EventRow({ title, events, icon: Icon, emptyHidden = true }) {
-  const ref = useRef(null);
-  const scroll = (dir) => ref.current?.scrollBy({ left: dir * 300, behavior: 'smooth' });
-  if (emptyHidden && !events.length) return null;
-
-  return (
-    <div className="mb-12">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          {Icon && <Icon size={18} className="text-primary" />}
-          <h2 className="text-lg font-bold text-on-surface">{title}</h2>
-          <span className="text-xs text-on-surface-variant">({events.length})</span>
-        </div>
-        {events.length > 3 && (
-          <div className="flex gap-2">
-            <button onClick={() => scroll(-1)}
-              className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary text-on-surface-variant
-                hover:text-on-surface flex items-center justify-center transition-all">
-              <ChevronLeft size={15} />
-            </button>
-            <button onClick={() => scroll(1)}
-              className="w-8 h-8 rounded-full bg-surface-container hover:bg-primary text-on-surface-variant
-                hover:text-on-surface flex items-center justify-center transition-all">
-              <ChevronRight size={15} />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {events.length === 0 ? (
-        <div className="flex items-center gap-3 py-6 px-5 rounded-2xl border border-outline-variant/30
-          bg-surface-container/50 text-on-surface-variant text-sm">
-          <Icon size={20} className="opacity-40" />
-          No {title.toLowerCase()} available in your area right now
-        </div>
-      ) : (
-        <div ref={ref} className="flex gap-4 overflow-x-auto pb-2" >
-          {events.map(e => <EventCard key={e.event_id} event={e} />)}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Hero Slider ───────────────────────────────────────────────────────────────
 
 function HeroSlider({ events }) {
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
-  const timerRef  = useRef(null);
-  const featured  = events.slice(0, 5);
+  const timerRef = useRef(null);
+  const featured = events.slice(0, 5);
 
   const go = useCallback((idx) => {
     setCurrent((idx + featured.length) % featured.length);
@@ -260,16 +214,16 @@ function HeroSlider({ events }) {
   }, [current, go]);
 
   if (!featured.length) return null;
-  const ev    = featured[current];
+  const ev = featured[current];
   const isReg = isRegistration(ev);
-  const cta   = getCtaLabel(ev);
+  const cta = getCtaLabel(ev);
 
   return (
     <div className="relative w-screen left-1/2 -translate-x-1/2 h-[420px] sm:h-[540px] overflow-hidden mb-10 group">
       <div className="absolute inset-0">
         {ev.poster_url
           ? <img src={ev.poster_url} alt={ev.title}
-              className="w-full h-full object-cover scale-105 blur-sm brightness-40" />
+            className="w-full h-full object-cover scale-105 blur-sm brightness-40" />
           : <div className="w-full h-full bg-surface-container-low" />
         }
       </div>
@@ -278,10 +232,11 @@ function HeroSlider({ events }) {
 
       <div className="absolute inset-0 flex items-end pb-8 sm:pb-14">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-8 items-end">
+          <div className="flex gap-8 items-center">
             {ev.poster_url && (
-              <img src={ev.poster_url} alt={ev.title}
-                className="hidden sm:block w-36 rounded-2xl shadow-2xl shadow-black/60 shrink-0" />
+              <div className="hidden sm:block w-full max-w-[280px] sm:max-w-[400px] aspect-video rounded-2xl overflow-hidden shrink-0 shadow-2xl">
+                <img src={ev.poster_url} alt={ev.title} className="w-full h-full object-cover" />
+              </div>
             )}
             <div className="max-w-xl">
               <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -353,14 +308,14 @@ function HeroSlider({ events }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function BrowsePage() {
-  const [allEvents,     setAllEvents]     = useState([]);
-  const [cities,        setCities]        = useState([]);
-  const [states,        setStates]        = useState([]);
-  const [loading,       setLoading]       = useState(true);
-  const [search,        setSearch]        = useState('');
-  const [cityId,        setCityId]        = useState('');
-  const [activeType,    setActiveType]    = useState('');
-  const [suggestions,   setSuggestions]   = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [states, setStates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [cityId, setCityId] = useState('');
+  const [activeType, setActiveType] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
   const [selectedState, setSelectedState] = useState(() => {
     try { return JSON.parse(localStorage.getItem(STATE_KEY)); } catch { return null; }
   });
@@ -378,7 +333,7 @@ export default function BrowsePage() {
   }, [states, selectedState]);
 
   const handleSelectState = (state) => {
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch {}
+    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch { }
     setSelectedState(state);
     setShowStatePicker(false);
     setCityId('');
@@ -399,9 +354,9 @@ export default function BrowsePage() {
     setLoading(true);
     try {
       const params = {};
-      if (selectedState) params.state_id  = selectedState.state_id;
-      if (cityId)        params.city_id   = cityId;
-      if (activeType)    params.event_type = activeType;
+      if (selectedState) params.state_id = selectedState.state_id;
+      if (cityId) params.city_id = cityId;
+      if (activeType) params.event_type = activeType;
       const r = await browseEvents(params);
       setAllEvents(r.data.data || []);
     } catch { /* silent */ }
@@ -423,12 +378,9 @@ export default function BrowsePage() {
     : allEvents;
 
   // Categorised rows
-  const movies    = filtered.filter(e => e.event_type?.toLowerCase() === 'movie');
-  const concerts  = filtered.filter(e => e.event_type?.toLowerCase() === 'concert');
-  const plays     = filtered.filter(e => e.event_type?.toLowerCase() === 'play');
-  const techFests = filtered.filter(e => e.event_type?.toLowerCase() === 'tech fest');
-  const workshops = filtered.filter(e => e.event_type?.toLowerCase() === 'workshop');
-  const sports    = filtered.filter(e => e.event_type?.toLowerCase() === 'sport');
+  const moviesPlays = filtered.filter(e => ['movie', 'play'].includes(e.event_type?.toLowerCase()));
+  const concertsTech = filtered.filter(e => ['concert', 'tech fest'].includes(e.event_type?.toLowerCase()));
+  const otherEvents = filtered.filter(e => !['movie', 'play', 'concert', 'tech fest'].includes(e.event_type?.toLowerCase()));
 
   // Cities for selected state
   const stateCities = selectedState
@@ -510,8 +462,8 @@ export default function BrowsePage() {
                     {e.poster_url
                       ? <img src={e.poster_url} className="w-8 h-10 rounded-lg object-cover shrink-0" />
                       : <div className="w-8 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-lg">
-                          {isRegistration(e) ? '🎯' : '🎬'}
-                        </div>
+                        {isRegistration(e) ? '🎯' : '🎬'}
+                      </div>
                     }
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-on-surface font-medium truncate">{e.title}</p>
@@ -530,20 +482,20 @@ export default function BrowsePage() {
         </div>
 
         {/* ── Category Pills ── */}
-        <div className="flex gap-3 overflow-x-auto pb-2 mb-8" >
+        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide mb-8" >
           <button onClick={() => setActiveType('')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
               whitespace-nowrap transition-all shrink-0 ${!activeType
-                ? 'bg-primary text-on-primary shadow-lg shadow-primary/30'
-                : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>
+                ? 'bg-primary text-[#000000]'
+                : 'bg-surface-container text-on-surface hover:bg-surface-container-high'}`}>
             All Events
           </button>
           {CATEGORIES.map(({ label, icon: Icon, type }) => (
             <button key={label} onClick={() => setActiveType(activeType === type ? '' : type)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
                 whitespace-nowrap transition-all shrink-0 ${activeType === type
-                  ? 'bg-primary text-on-primary shadow-lg shadow-primary/30'
-                  : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant'}`}>
+                  ? 'bg-primary text-[#000000]'
+                  : 'bg-surface-container text-on-surface hover:bg-surface-container-high'}`}>
               <Icon size={14} />
               {label}
             </button>
@@ -552,41 +504,26 @@ export default function BrowsePage() {
 
         {/* ── Content ── */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-2xl bg-surface-container animate-pulse aspect-[2/3]" />
+          <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory -mx-4 px-4 pb-4 mb-16 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="flex flex-col gap-3 shrink-0 w-[280px] sm:w-[320px]">
+                <div className="rounded-xl bg-surface-container animate-pulse aspect-video w-full" />
+                <div className="h-4 bg-surface-container animate-pulse rounded w-3/4" />
+                <div className="h-3 bg-surface-container animate-pulse rounded w-1/2 mt-1" />
+              </div>
             ))}
           </div>
-        ) : search ? (
-          /* ── Search results ── */
-          <div className="mb-12">
-            <p className="text-sm text-on-surface-variant mb-5">
-              {filtered.length} result{filtered.length !== 1 ? 's' : ''} for{' '}
-              "<span className="text-on-surface">{search}</span>"
-              {selectedState ? ` in ${selectedState.state_name}` : ' (National)'}
-            </p>
-            {filtered.length === 0
-              ? <div className="flex flex-col items-center py-20">
-                  <span className="text-5xl mb-4">🎭</span>
-                  <p className="text-on-surface-variant">No events found</p>
-                </div>
-              : <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {filtered.map(e => <EventCard key={e.event_id} event={e} />)}
-                </div>
-            }
-          </div>
         ) : (
-          /* ── Categorised rows ── */
-          <>
-            <EventRow title="Trending Movies"       events={movies}    icon={Tv}       />
-            <EventRow title="Live Concerts"          events={concerts}  icon={Music}    />
-            <EventRow title="Theatre & Plays"        events={plays}     icon={Ticket}   />
-            <EventRow title="Tech Fests"             events={techFests} icon={Cpu}      emptyHidden />
-            <EventRow title="Workshops & Seminars"   events={workshops} icon={BookOpen} emptyHidden />
-            <EventRow title="Sports"                 events={sports}    icon={Trophy}   emptyHidden />
-            <EventRow title="All Events"             events={filtered}  icon={Star}     />
+          <div className="mb-16">
+            {search && (
+              <p className="text-sm text-on-surface-variant mb-5">
+                {filtered.length} result{filtered.length !== 1 ? 's' : ''} for{' '}
+                "<span className="text-on-surface">{search}</span>"
+                {selectedState ? ` in ${selectedState.state_name}` : ' (National)'}
+              </p>
+            )}
 
-            {filtered.length === 0 && (
+            {filtered.length === 0 ? (
               <div className="flex flex-col items-center py-20">
                 <span className="text-5xl mb-4">🎭</span>
                 <p className="text-on-surface font-semibold">
@@ -603,8 +540,37 @@ export default function BrowsePage() {
                   {selectedState ? 'Change State' : 'Select State'}
                 </button>
               </div>
+            ) : (
+              <div className="flex flex-col gap-12">
+                {moviesPlays.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-bold mb-4 text-on-surface">Trending Movies & Plays</h2>
+                    <div className="flex flex-nowrap overflow-x-auto gap-4 snap-x snap-mandatory -mx-4 px-4 pb-6 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+                      {moviesPlays.map(e => <EventCard key={e.event_id} event={e} />)}
+                    </div>
+                  </div>
+                )}
+
+                {concertsTech.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-bold mb-4 text-on-surface">Concerts & Tech Fests</h2>
+                    <div className="flex flex-nowrap overflow-x-auto gap-4 snap-x snap-mandatory -mx-4 px-4 pb-6 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+                      {concertsTech.map(e => <EventCard key={e.event_id} event={e} />)}
+                    </div>
+                  </div>
+                )}
+
+                {otherEvents.length > 0 && (
+                  <div>
+                    <h2 className="text-xl font-bold mb-4 text-on-surface">More Events</h2>
+                    <div className="flex flex-nowrap overflow-x-auto gap-4 snap-x snap-mandatory -mx-4 px-4 pb-6 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-track]:bg-transparent">
+                      {otherEvents.map(e => <EventCard key={e.event_id} event={e} />)}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

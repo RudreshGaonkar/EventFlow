@@ -51,7 +51,7 @@ function SessionCard({ session, index }) {
     >
       {/* Poster strip */}
       {session.poster_url && (
-        <div className="h-28 relative overflow-hidden">
+        <div className="w-full aspect-[21/9] sm:aspect-[3/1] relative overflow-hidden">
           <img
             src={session.poster_url}
             alt={session.event_title}

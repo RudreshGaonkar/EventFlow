@@ -68,10 +68,12 @@ export default function EventsTab() {
         columns={['Event', 'Type', 'Genre', 'Duration', 'Rating', 'Actions']}
         rows={events.map(e => [
           <div className="flex items-center gap-3">
-            {e.poster_url
-              ? <img src={e.poster_url} className="w-9 h-12 rounded-lg object-cover" />
-              : <div className="w-9 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center"><Image size={14} className="text-outline" /></div>
-            }
+            <div className={`overflow-hidden shrink-0 rounded-lg bg-surface-container-highest flex items-center justify-center
+              ${['Movie', 'Play'].includes(e.event_type) ? 'w-10 aspect-[2/3]' : 'w-14 aspect-video'}`}>
+              {e.poster_url 
+                ? <img src={e.poster_url} className="w-full h-full object-cover" alt={e.title} />
+                : <Image size={14} className="text-outline" />}
+            </div>
             <div>
               <p className="font-medium text-on-surface text-sm">{e.title}</p>
               <p className="text-xs text-on-surface-variant">{e.language}</p>

@@ -129,7 +129,7 @@ export default function RentalRequestList() {
                     onClick={() => handleStatusUpdate(req.request_id, 'Accepted', req.venue_name)}
                     disabled={processingId === req.request_id}
                     className="flex-1 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold shadow-lg shadow-primary/20
-                      hover:bg-primary-container hover:-translate-y-0.5 transition-all active:translate-y-0
+                      hover:bg-primary/90 hover:-translate-y-0.5 transition-all active:translate-y-0
                       disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                   >
                     {processingId === req.request_id ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
