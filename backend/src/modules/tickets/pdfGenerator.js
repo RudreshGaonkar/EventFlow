@@ -48,7 +48,7 @@ const generateTicketPDF = (ticket) => {
       doc.font('Helvetica');
       doc.text('Seat     : ' + ticket.seat_label);
       doc.text('Tier     : ' + ticket.tier_name);
-      doc.text('Price    : ₹' + Number(ticket.price_paid).toFixed(2));
+      doc.text('Price    : Rs.' + Number(ticket.price_paid).toFixed(2));
       doc.fontSize(9).font('Helvetica').fillColor('grey').text('(Inclusive of all taxes & fees)');
       doc.fillColor('black').fontSize(11).font('Helvetica');
 

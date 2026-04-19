@@ -5,6 +5,7 @@ import RoleGuard from './components/common/RoleGuard';
 import Skeleton from './components/common/LoadingSkeleton';
 import { ToastProvider } from './components/common/Toast';
 import Footer from './components/common/Footer';
+import ScrollToTop from './components/common/ScrollToTop';
 import ProfilePage from './pages/profile/ProfilePage';
 
 // Auth
@@ -67,6 +68,7 @@ export default function App() {
     <div className="min-h-screen bg-surface-container-lowest">
       {showNavbar && <Navbar />}
       <ToastProvider>
+        <ScrollToTop />
         <Routes>
           {/* ── Public ── */}
           <Route path="/login" element={<LoginPage />} />

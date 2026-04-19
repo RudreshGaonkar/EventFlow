@@ -84,6 +84,16 @@ const insertSeatsForRow = async (venue_id, owner_id, fields) => {
     [values]
   );
 
+  // Retroactive Sync: Add newly fully active seats to future sessions
+  await getPool().query(
+    `INSERT IGNORE INTO session_seats (session_id, seat_id, status)
+     SELECT es.session_id, s.seat_id, 'Available'
+     FROM event_sessions es
+     JOIN seats s ON s.venue_id = es.venue_id
+     WHERE es.venue_id = ? AND es.show_date >= CURDATE() AND s.is_active = 1`,
+    [venue_id]
+  );
+
   // Sync total_capacity
   await getPool().query(
     `UPDATE venues SET total_capacity = (
@@ -91,31 +101,65 @@ const insertSeatsForRow = async (venue_id, owner_id, fields) => {
      ) WHERE venue_id = ?`,
     [venue_id, venue_id]
   );
+
+  // Sync total_seats on future sessions
+  await getPool().query(
+    `UPDATE event_sessions SET total_seats = (
+       SELECT COUNT(*) FROM session_seats WHERE session_id = event_sessions.session_id
+     ) WHERE venue_id = ? AND show_date >= CURDATE()`,
+    [venue_id]
+  );
 };
 
 const toggleSeat = async (seat_id, owner_id, is_active) => {
   const [check] = await getPool().query(
-    `SELECT s.seat_id FROM seats s
+    `SELECT s.seat_id, s.venue_id FROM seats s
      JOIN venues v ON v.venue_id = s.venue_id
      WHERE s.seat_id = ? AND v.owner_id = ?`,
     [seat_id, owner_id]
   );
   if (!check.length) throw new Error('FORBIDDEN');
+  const venue_id = check[0].venue_id;
 
   await getPool().query(
     `UPDATE seats SET is_active = ? WHERE seat_id = ?`,
     [is_active ? 1 : 0, seat_id]
   );
 
+  if (!is_active) {
+    // If deactivating, delete from future sessions ONLY IF status is 'Available'
+    await getPool().query(
+      `DELETE ss FROM session_seats ss
+       JOIN event_sessions es ON es.session_id = ss.session_id
+       WHERE ss.seat_id = ? AND es.show_date >= CURDATE() AND ss.status = 'Available'`,
+      [seat_id]
+    );
+  } else {
+    // If activating, add to future sessions
+    // INSERT IGNORE avoids duplicates if it somehow exists
+    await getPool().query(
+      `INSERT IGNORE INTO session_seats (session_id, seat_id, status)
+       SELECT es.session_id, ?, 'Available'
+       FROM event_sessions es
+       WHERE es.venue_id = ? AND es.show_date >= CURDATE()`,
+      [seat_id, venue_id]
+    );
+  }
+
   // Sync total_capacity
-  const [[{ venue_id }]] = await getPool().query(
-    `SELECT venue_id FROM seats WHERE seat_id = ?`, [seat_id]
-  );
   await getPool().query(
     `UPDATE venues SET total_capacity = (
        SELECT COUNT(*) FROM seats WHERE venue_id = ? AND is_active = 1
      ) WHERE venue_id = ?`,
     [venue_id, venue_id]
+  );
+
+  // Sync total_seats on future sessions
+  await getPool().query(
+    `UPDATE event_sessions SET total_seats = (
+       SELECT COUNT(*) FROM session_seats WHERE session_id = event_sessions.session_id
+     ) WHERE venue_id = ? AND show_date >= CURDATE()`,
+    [venue_id]
   );
 };
 

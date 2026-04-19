@@ -5,6 +5,7 @@ const {
   createSeat,
   bulkCreateSeats,
   getSessionSeats,
+  getZonedSeatingLayout,
   createSessionSeats,
   releaseExpiredLocks,
   getSessionWithVenue
@@ -86,23 +87,32 @@ const getSessionSeatMap = async (req, res) => {
       return res.status(200).json({ success: true, data: JSON.parse(cached), source: 'cache' });
     }
 
-    // Cache miss — fetch from DB
-    const seats = await getSessionSeats(session_id);
+    // Cache miss — fetch session metadata to determine layout type
     const session = await getSessionWithVenue(session_id);
-
     if (!session) {
       return res.status(404).json({ success: false, message: 'Session not found' });
     }
 
-    // Calculate final price per seat
-    const seatsWithPrice = seats.map(seat => ({
-      ...seat,
-      final_price: parseFloat(
-        (seat.base_price * session.city_multiplier * session.demand_multiplier).toFixed(2)
-      )
-    }));
+    // Route to the correct layout using layout_type from the DB — single source of truth
+    const isZoned = session.layout_type === 'ZONED';
 
-    const payload = { seats: seatsWithPrice, session };
+    let payload;
+
+    if (isZoned) {
+      // ZONED layout: aggregate available seats by tier
+      const zoned = await getZonedSeatingLayout(session_id);
+      payload = { ...zoned, session };
+    } else {
+      // GRID layout: flat seat array with final prices (existing behaviour)
+      const seats = await getSessionSeats(session_id);
+      const seatsWithPrice = seats.map(seat => ({
+        ...seat,
+        final_price: parseFloat(
+          (seat.base_price * session.city_multiplier * session.demand_multiplier).toFixed(2)
+        )
+      }));
+      payload = { layout_type: 'GRID', seats: seatsWithPrice, session };
+    }
 
     // Store in Redis cache with TTL
     await redis.set(cacheKey, JSON.stringify(payload), 'EX', SEAT_CACHE_TTL);

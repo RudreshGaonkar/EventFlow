@@ -36,7 +36,9 @@ const scanTicket = async (req, res) => {
     }
 
     // ── Step 3: Call stored procedure (handles Already-Used / Cancelled) ───
-    const result = await validateTicket(ticket_uuid, req.user.user_id);
+    const staff_id = req.user?.user_id || req.user?.id;
+    if (!staff_id) throw new Error("Staff ID is missing from token payload");
+    const result = await validateTicket(ticket_uuid, staff_id);
 
     // result_code: 0 = approved, 1 = already checked-in, 2 = not found,
     //              3 = cancelled, 4 = tx error, 5 = wrong venue
@@ -93,7 +95,7 @@ const scanTicket = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[Scanner] scanTicket error:', err.message);
+    console.error("SCANNER API ERROR:", err);
     return res.status(500).json({ success: false, message: 'Scan failed — server error' });
   }
 };

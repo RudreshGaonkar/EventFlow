@@ -90,8 +90,7 @@ export default function SessionsTab() {
         {selEvent && (
           <button
             onClick={() => { setForm(BLANK); setModal({ mode: 'add' }); }}
-            className="mt-5 flex items-center gap-2 px-4 py-2.5 bg-primary-container
-              text-on-primary-container text-sm font-semibold rounded-xl hover:opacity-90 transition-all">
+            className="mt-5 flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm">
             <Plus size={15} /> Add Session
           </button>
         )}

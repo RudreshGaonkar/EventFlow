@@ -12,9 +12,7 @@ export default function AdminTable({ title, onAdd, loading, columns, rows, hideA
         </div>
         {!hideAdd && onAdd && (
           <button onClick={onAdd}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-container
-              text-[#000000] text-sm font-semibold rounded-xl
-              hover:opacity-90 transition-all">
+            className="flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm">
             <Plus size={15} /> {addLabel || 'Add New'}
           </button>
         )}

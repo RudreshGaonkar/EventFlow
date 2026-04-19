@@ -110,12 +110,73 @@ const getSessionWithVenue = async (session_id) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT es.*, v.venue_id, v.venue_name, c.city_multiplier, c.city_name, s.state_name FROM event_sessions es JOIN venues v ON es.venue_id = v.venue_id JOIN cities c ON v.city_id = c.city_id JOIN states s ON c.state_id = s.state_id WHERE es.session_id = ?',
+      `SELECT es.*, pe.event_type,
+              v.venue_id, v.venue_name, v.layout_type,
+              c.city_multiplier, c.city_name, s.state_name
+       FROM event_sessions es
+       JOIN parent_events pe ON pe.event_id = es.event_id
+       JOIN venues        v  ON v.venue_id  = es.venue_id
+       JOIN cities        c  ON c.city_id   = v.city_id
+       JOIN states        s  ON s.state_id  = c.state_id
+       WHERE es.session_id = ?`,
       [session_id]
     );
     return rows[0] || null;
   } catch (err) {
     throw new Error('DB error in getSessionWithVenue: ' + err.message);
+  }
+};
+
+// Zoned layout: aggregate available session_seats per tier for Concert / Sport events.
+// Uses JS-side grouping to avoid hitting JSON_ARRAYAGG group-concat length limits
+// on venues with many seats.
+const getZonedSeatingLayout = async (session_id) => {
+  try {
+    const pool = getPool();
+
+    // Fetch all available seats for the session, joined with pricing data.
+    // The final_price is computed inline so no second round-trip is needed.
+    const [rows] = await pool.execute(
+      `SELECT
+         ss.session_seat_id,
+         st.tier_id,
+         st.tier_name,
+         ROUND(st.base_price * c.city_multiplier * es.demand_multiplier, 2) AS final_price
+       FROM session_seats ss
+       JOIN seats          s   ON s.seat_id      = ss.seat_id
+       JOIN seat_tiers     st  ON st.tier_id     = s.tier_id
+       JOIN event_sessions es  ON es.session_id  = ss.session_id
+       JOIN venues         v   ON v.venue_id     = es.venue_id
+       JOIN cities         c   ON c.city_id      = v.city_id
+       WHERE ss.session_id = ?
+         AND ss.status     = 'Available'
+       ORDER BY st.tier_id ASC`,
+      [session_id]
+    );
+
+    // Group rows by tier in JavaScript — avoids any DB-level aggregation limits.
+    const tierMap = new Map();
+    for (const row of rows) {
+      if (!tierMap.has(row.tier_id)) {
+        tierMap.set(row.tier_id, {
+          tier_id:             row.tier_id,
+          tier:                row.tier_name,
+          price:               parseFloat(row.final_price),
+          available_count:     0,
+          available_seat_ids:  [],
+        });
+      }
+      const zone = tierMap.get(row.tier_id);
+      zone.available_count++;
+      zone.available_seat_ids.push(row.session_seat_id);
+    }
+
+    return {
+      layout_type: 'ZONED',
+      zones: Array.from(tierMap.values()),
+    };
+  } catch (err) {
+    throw new Error('DB error in getZonedSeatingLayout: ' + err.message);
   }
 };
 
@@ -125,6 +186,7 @@ module.exports = {
   createSeat,
   bulkCreateSeats,
   getSessionSeats,
+  getZonedSeatingLayout,
   createSessionSeats,
   releaseExpiredLocks,
   getSessionWithVenue

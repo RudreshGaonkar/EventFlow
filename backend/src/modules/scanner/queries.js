@@ -1,6 +1,7 @@
-const db = require('../../config/db');
+const { getPool } = require('../../config/db');
 
 const validateTicket = async (ticket_uuid, staff_id) => {
+  const db = getPool();
   await db.query(
     'CALL validate_ticket(?, ?, @result_code, @result_msg)',
     [ticket_uuid, staff_id]
@@ -16,6 +17,7 @@ const validateTicket = async (ticket_uuid, staff_id) => {
 // Returns metadata about a ticket for display, plus the session_id it belongs to
 // so the service layer can enforce strict session matching.
 const getTicketPreview = async (ticket_uuid) => {
+  const db = getPool();
   const [rows] = await db.query(
     `SELECT
        t.ticket_uuid,

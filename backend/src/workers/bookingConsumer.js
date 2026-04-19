@@ -92,7 +92,10 @@ async function startWorker() {
       await processJob(job);
 
     } catch (err) {
-      console.error('[BookingWorker] Error:', err.message, '— retrying in 3s');
+      console.error('\n========================================');
+      console.error('[BookingWorker] CRITICAL SP ROLLBACK ERROR:');
+      console.error(err); 
+      console.error('========================================\n');
       await new Promise(r => setTimeout(r, 3000));
     }
   }

@@ -32,6 +32,12 @@ const formatDuration = (mins) => {
   return h > 0 ? `${h}h${m > 0 ? ` ${m}m` : ''}` : `${m}m`;
 };
 
+const getYouTubeId = (url) => {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/.*(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/);
+  return match ? match[1] : null;
+};
+
 // ── Session Card (booking events) ─────────────────────────────────────────────
 
 function SessionCard({ session, onSelect, listingDaysAhead }) {
@@ -245,6 +251,7 @@ export default function EventPage() {
 
   const [event, setEvent] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false); // ✅ NEW: replaces catch navigate('/')
   const [cityFilter, setCityFilter] = useState('');
@@ -422,12 +429,12 @@ export default function EventPage() {
 
               <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-5">
                 {event.trailer_url && (
-                  <a href={event.trailer_url} target="_blank" rel="noreferrer"
+                  <button onClick={() => setIsTrailerOpen(true)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface-container
                       text-on-surface text-sm font-semibold rounded-2xl border border-outline-variant
                       hover:bg-surface-container-high transition-all">
                     <Play size={14} fill="currentColor" /> Watch Trailer
-                  </a>
+                  </button>
                 )}
                 {event.brochure_url && (
                   <a href={event.brochure_url} target="_blank" rel="noreferrer"
@@ -626,6 +633,33 @@ export default function EventPage() {
         {/* ── Reviews ── */}
         <ReviewSection eventId={event_id} />
       </div>
+
+      {/* ── Cinematic Trailer Modal ── */}
+      {isTrailerOpen && event.trailer_url && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setIsTrailerOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-4xl aspect-video bg-gray-900 rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black transition border border-white/10"
+              onClick={() => setIsTrailerOpen(false)}
+            >
+              ✕
+            </button>
+            <iframe
+              src={`https://www.youtube.com/embed/${getYouTubeId(event.trailer_url)}?autoplay=1`}
+              title="Event Trailer"
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

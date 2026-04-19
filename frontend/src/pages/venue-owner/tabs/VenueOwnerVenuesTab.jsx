@@ -6,6 +6,7 @@ import { useToast } from '../../../components/common/Toast';
 import AdminTable from '../../../components/common/AdminTable';
 import AdminModal from '../../../components/common/AdminModal';
 import AdminField from '../../../components/common/AdminField';
+import api from '../../../services/api';
 
 const BLANK = { city_id: '', venue_name: '', address: '', total_capacity: '', is_rentable: false };
 const SEAT_BLANK = { tier_id: '1', seat_row: '', seat_count: '10' };
@@ -26,6 +27,7 @@ const TIER_COLORS = {
 export default function VenueOwnerVenuesTab() {
   const [venues,    setVenues]    = useState([]);
   const [cities,    setCities]    = useState([]);
+  const [tiers,     setTiers]     = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [modal,     setModal]     = useState(null);       // venue add/edit
   const [seatPanel, setSeatPanel] = useState(null);       // { venue }
@@ -38,9 +40,10 @@ export default function VenueOwnerVenuesTab() {
   const load = async () => {
     setLoading(true);
     try {
-      const [vRes, cRes] = await Promise.all([getMyVenues(), getCities()]);
+      const [vRes, cRes, tRes] = await Promise.all([getMyVenues(), getCities(), api.get('/seats/tiers')]);
       setVenues(vRes.data.data || []);
       setCities(cRes.data.data || []);
+      setTiers(tRes.data.data || []);
     } catch { showToast('Failed to load', 'error'); }
     finally { setLoading(false); }
   };
@@ -222,9 +225,11 @@ export default function VenueOwnerVenuesTab() {
                     <select value={seatForm.tier_id}
                       onChange={e => setSeatForm(f => ({ ...f, tier_id: e.target.value }))}
                       className="w-full px-3 py-2 bg-surface-container text-on-surface rounded-xl text-sm outline-none">
-                      <option value="1">Recliner (₹800)</option>
-                      <option value="2">Prime (₹400)</option>
-                      <option value="3">Classic (₹200)</option>
+                      {tiers.map((tier) => (
+                        <option key={tier.tier_id} value={tier.tier_id}>
+                          Tier {tier.tier_id}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="space-y-1">
@@ -238,7 +243,7 @@ export default function VenueOwnerVenuesTab() {
                   </div>
                 </div>
                 <button onClick={handleAddSeats} disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50">
+                  className="flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm disabled:opacity-50">
                   <Plus size={14} /> Add Row
                 </button>
               </div>

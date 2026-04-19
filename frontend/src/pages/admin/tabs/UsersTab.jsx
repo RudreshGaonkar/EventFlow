@@ -78,7 +78,7 @@ export default function UsersTab() {
       <div className="flex justify-end mb-4">
         <button
           onClick={() => { setForm(BLANK); setModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-on-surface text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+          className="flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm"
         >
           <UserPlus size={15} /> Add User
         </button>

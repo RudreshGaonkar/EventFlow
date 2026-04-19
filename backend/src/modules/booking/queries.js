@@ -2,25 +2,30 @@ const { getPool } = require('../../config/db');
 
 // Call book_seats stored procedure
 const callBookSeats = async (user_id, session_id, seat_ids) => {
+  const pool = getPool();
+  const conn = await pool.getConnection(); // single dedicated connection
   try {
-    const pool = getPool();
-    // Pass seat_ids as JSON array string
     const seatIdsJson = JSON.stringify(seat_ids);
 
-    await pool.execute('SET @booking_id = 0, @result_code = 0, @result_msg = ""');
+    // All three statements MUST run on the same connection so session vars are shared
+    await conn.execute('SET @booking_id = 0, @result_code = 0, @result_msg = ""');
 
-    await pool.execute(
+    await conn.execute(
       'CALL book_seats(?, ?, ?, @booking_id, @result_code, @result_msg)',
       [user_id, session_id, seatIdsJson]
     );
 
-    const [[outParams]] = await pool.execute(
+    const [[outParams]] = await conn.execute(
       'SELECT @booking_id AS booking_id, @result_code AS result_code, @result_msg AS result_msg'
     );
 
+    console.log('[callBookSeats] SP output:', outParams);
     return outParams;
   } catch (err) {
-    throw new Error('DB error in callBookSeats: ' + err.message);
+    console.error('[callBookSeats] RAW DB ERROR:', err);
+    throw err;
+  } finally {
+    conn.release(); // always return the connection to the pool
   }
 };
 

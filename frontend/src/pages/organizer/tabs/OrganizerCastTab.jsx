@@ -103,7 +103,7 @@ export default function OrganizerCastTab() {
         </select>
         <button
           onClick={() => { setPersonForm(BLANK_PERSON); setPersonModal({ mode: 'add' }); }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-surface-container text-on-surface-variant text-sm font-semibold rounded-xl hover:text-on-surface hover:bg-surface-container-highest transition-all"
+          className="flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm"
         >
           <UserPlus size={15} />
           New Person
@@ -111,7 +111,7 @@ export default function OrganizerCastTab() {
         {selEvent && (
           <button
             onClick={() => { setCastForm(BLANK_CAST); setCastModal(true); }}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-[#000000] text-sm font-semibold rounded-xl hover:bg-primary/90 transition-all"
+            className="flex items-center gap-2 bg-white text-black font-semibold rounded-full hover:bg-neutral-200 transition-colors px-4 py-2 text-sm"
           >
             <Plus size={15} />
             Add to Cast
