@@ -17,7 +17,7 @@ const findUserById = async (userId) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT user_id, role_id, role_name, full_name, email, phone, home_state_id, is_active, created_at FROM users JOIN roles USING (role_id) WHERE user_id = ?',
+      'SELECT user_id, role_id, role_name, full_name, email, phone, home_state_id, avatar_url, is_active, created_at FROM users JOIN roles USING (role_id) WHERE user_id = ?',
       [userId]
     );
     return rows[0] || null;

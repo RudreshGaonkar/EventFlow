@@ -105,18 +105,19 @@ export default function AdminPage() {
           <h1 className="font-headline font-bold text-on-surface capitalize">{active}</h1>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0  }}
-            exit={{    opacity: 0, y: -8  }}
-            transition={{ duration: 0.2 }}
-            className="p-6 lg:p-8"
-          >
-            <ActiveTab />
-          </motion.div>
-        </AnimatePresence>
+        <div className="p-6 lg:p-8 max-w-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0  }}
+              exit={{    opacity: 0, y: -8  }}
+              transition={{ duration: 0.2 }}
+            >
+              <ActiveTab />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </main>
     </div>
   );

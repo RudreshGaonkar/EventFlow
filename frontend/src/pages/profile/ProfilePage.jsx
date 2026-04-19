@@ -169,47 +169,44 @@ function PasswordSection({ onToast }) {
     );
 }
 
-// Booking Card
 function BookingCard({ booking }) {
     const navigate = useNavigate();
     return (
         <button
-            onClick={() => navigate(`/booking/${booking.bookingid}`)}
-            className="w-full text-left p-4 rounded-2xl border bg-surface-container border-outline-variant
-        hover:border-primary/40 hover:bg-primary/5 transition-all group">
-            <div className="flex items-start justify-between gap-2 mb-2">
-                <p className="text-sm font-semibold text-on-surface leading-tight">{booking.eventtitle}</p>
-                <span className={`shrink-0 text-10px font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[booking.bookingstatus] || ''}`}>
-                    {booking.bookingstatus}
+            onClick={() => navigate(`/booking/${booking.booking_id}`)}
+            className="w-full text-left p-6 rounded-2xl border bg-[#141414] border-white/5 shadow-none
+        hover:border-primary/40 hover:bg-[#222222] transition-all group">
+            <div className="flex items-start justify-between gap-2 mb-3">
+                <p className="text-base font-semibold text-gray-100 leading-tight">{booking.event_title}</p>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border ${STATUS_STYLE[booking.booking_status] || ''}`}>
+                    {booking.booking_status}
                 </span>
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-on-surface-variant">
-                <span className="flex items-center gap-1"><Calendar size={11} />{fmt(booking.showdate)}</span>
-                <span className="flex items-center gap-1"><Clock size={11} />{booking.showtime?.slice(0, 5)}</span>
-                <span className="flex items-center gap-1"><MapPin size={11} />{booking.venuename}, {booking.cityname}</span>
-                <span className="flex items-center gap-1"><Ticket size={11} />{booking.numseats} seat{booking.numseats !== 1 ? 's' : ''}</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400">
+                <span className="flex items-center gap-1.5"><Calendar size={13} />{fmt(booking.show_date)}</span>
+                <span className="flex items-center gap-1.5"><Clock size={13} />{booking.show_time?.slice(0, 5)}</span>
+                <span className="flex items-center gap-1.5"><MapPin size={13} />{booking.venue_name}</span>
             </div>
-            <p className="mt-2 text-sm font-bold text-primary">₹{Number(booking.totalamount).toLocaleString('en-IN')}</p>
+            <p className="mt-4 text-sm font-bold text-primary">₹{Number(booking.total_amount || 0).toLocaleString('en-IN')}</p>
         </button>
     );
 }
 
-// Registration Card 
 function RegCard({ reg }) {
     return (
-        <div className="p-4 rounded-2xl border bg-surface-container border-outline-variant">
-            <div className="flex items-start justify-between gap-2 mb-2">
-                <p className="text-sm font-semibold text-on-surface leading-tight">{reg.eventtitle}</p>
-                <span className={`shrink-0 text-10px font-bold px-2 py-0.5 rounded-full border ${STATUS_STYLE[reg.status] || ''}`}>
+        <div className="p-6 rounded-2xl border bg-[#141414] border-white/5 shadow-none transition-all">
+            <div className="flex items-start justify-between gap-2 mb-3">
+                <p className="text-base font-semibold text-gray-100 leading-tight">{reg.eventtitle}</p>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border ${STATUS_STYLE[reg.status] || ''}`}>
                     {reg.status}
                 </span>
             </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-on-surface-variant">
-                <span className="flex items-center gap-1"><Calendar size={11} />{fmt(reg.registeredat)}</span>
-                {reg.teamname && <span className="flex items-center gap-1"><User size={11} />Team: {reg.teamname}</span>}
-                {reg.amountpaid > 0 && (
-                    <span className="flex items-center gap-1 font-semibold text-primary">
-                        ₹{Number(reg.amountpaid).toLocaleString('en-IN')} paid
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-400">
+                <span className="flex items-center gap-1.5"><Calendar size={13} />{fmt(reg.registered_at)}</span>
+                {reg.team_name && <span className="flex items-center gap-1.5"><User size={13} />Team: {reg.team_name}</span>}
+                {reg.amount_paid > 0 && (
+                    <span className="flex items-center gap-1.5 font-semibold text-primary">
+                        ₹{Number(reg.amount_paid || 0).toLocaleString('en-IN')} paid
                     </span>
                 )}
             </div>
@@ -217,22 +214,21 @@ function RegCard({ reg }) {
     );
 }
 
-//  Review Card 
 function MyReviewCard({ review }) {
     return (
-        <div className="p-4 rounded-2xl border bg-surface-container border-outline-variant">
-            <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-semibold text-on-surface">{review.eventtitle || review.sessiontitle || 'Event'}</p>
-                <div className="flex gap-0.5">
+        <div className="p-6 rounded-2xl border bg-[#141414] border-white/5 shadow-none transition-all">
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-base font-semibold text-gray-100">{review.eventtitle || review.sessiontitle || 'Event'}</p>
+                <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map(s => (
-                        <Star key={s} size={12}
-                            className={s <= review.rating ? 'text-gold' : 'text-on-surface-variant opacity-30'}
+                        <Star key={s} size={14}
+                            className={s <= review.rating ? 'text-gold' : 'text-gray-600'}
                             fill={s <= review.rating ? 'currentColor' : 'none'} />
                     ))}
                 </div>
             </div>
-            {review.reviewtext && <p className="text-xs text-on-surface-variant leading-relaxed">{review.reviewtext}</p>}
-            <p className="text-10px text-on-surface-variant mt-1.5">{fmt(review.createdat)}</p>
+            {review.review_text && <p className="text-sm text-gray-400 leading-relaxed mt-3">{review.review_text}</p>}
+            <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">{fmt(review.created_at)}</p>
         </div>
     );
 }
@@ -476,11 +472,18 @@ export default function ProfilePage() {
                 setBookings(bRes.data.data || []);
                 setRegs(rRes.data.data || []);
                 setReviews(rvRes.data.data || []);
-            } catch { /* profile will stay null */ }
-            finally { setLoading(false); }
+            } catch (err) {
+                // Redirect to login on auth failure; leave profile null for other errors
+                const status = err?.response?.status;
+                if (status === 401 || status === 403) {
+                    navigate('/login', { state: { message: 'Session expired. Please log in again.' } });
+                    return;
+                }
+                // profile stays null — the "could not load" UI will render
+            } finally { setLoading(false); }
         };
         load();
-    }, []);
+    }, [navigate]);
 
     const saveField = async (field, value) => {
         setSaving(true);
@@ -504,7 +507,7 @@ export default function ProfilePage() {
             const res = await api.patch('/auth/avatar', form, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setProfile(p => ({ ...p, avatarurl: res.data.data?.avatarurl }));
+            setProfile(p => ({ ...p, avatar_url: res.data.data?.avatar_url }));
             showToast('Avatar updated');
         } catch { showToast('Could not upload avatar', 'error'); }
         finally { setAvatarUploading(false); }
@@ -544,26 +547,28 @@ export default function ProfilePage() {
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
 
                         {/* Avatar */}
-                        <div className="relative shrink-0">
-                            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-2 ring-outline-variant
-                bg-surface-container-highest flex items-center justify-center">
-                                {profile.avatarurl ? (
-                                    <img src={profile.avatarurl} alt={profile.fullname}
-                                        className="w-full h-full object-cover" />
+                        <div className="relative shrink-0 mx-auto sm:mx-0">
+                            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-outline-variant/30
+                bg-surface-container flex items-center justify-center group cursor-pointer shadow-none relative"
+                onClick={() => fileRef.current?.click()}>
+                                {profile.avatar_url ? (
+                                    <img src={profile.avatar_url} alt={profile.fullname}
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                                 ) : (
-                                    <span className="text-2xl font-extrabold text-on-surface-variant">{initials}</span>
+                                    <User size={48} className="text-on-surface-variant/40" />
                                 )}
                                 {avatarUploading && (
-                                    <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                                        <Loader2 size={20} className="animate-spin text-primary" />
+                                    <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center">
+                                        <Loader2 size={24} className="animate-spin text-primary" />
                                     </div>
                                 )}
                             </div>
                             <button onClick={() => fileRef.current?.click()}
-                                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-surface-container-highest
-                  border border-outline-variant flex items-center justify-center hover:bg-surface-container
-                  transition-all shadow-sm">
-                                <Camera size={13} className="text-on-surface-variant" />
+                                className="absolute bottom-0 right-0 w-9 h-9 rounded-full 
+                  bg-surface-container-high backdrop-blur-md border border-outline-variant/50 
+                  flex items-center justify-center hover:bg-surface-container-highest hover:scale-105
+                  transition-all shadow-none text-primary z-10">
+                                <Camera size={16} />
                             </button>
                             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                         </div>
@@ -594,37 +599,45 @@ export default function ProfilePage() {
             </div>
 
             {/* ── Body ── */}
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-8">
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                     {/* ── LEFT: Settings ── */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className="space-y-6">
 
                         {/* Personal Info */}
-                        <div className="bg-surface-container border border-outline-variant rounded-2xl p-5 space-y-4">
-                            <h2 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
-                                <User size={13} className="text-primary" /> Personal Info
+                        <div className="bg-[#141414] rounded-2xl p-6 shadow-none border border-white/5 space-y-5">
+                            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                                <User size={15} className="text-primary" /> Personal Info
                             </h2>
-                            <EditField label="Full Name" value={profile.fullname}
-                                onSave={v => saveField('fullname', v)} saving={saving} />
-                            <div>
-                                <p className="text-10px font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Email</p>
-                                <div className="flex items-center gap-2">
-                                    <Mail size={13} className="text-on-surface-variant shrink-0" />
-                                    <span className="text-sm text-on-surface">{profile.email}</span>
-                                    <span className="ml-auto text-10px text-on-surface-variant italic">Cannot change</span>
+                            <div className="space-y-4">
+                                <EditField label="Full Name" value={profile.fullname}
+                                    onSave={v => saveField('fullname', v)} saving={saving} />
+                                <div>
+                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-1">Email</p>
+                                    <div className="flex items-center gap-2">
+                                        <Mail size={13} className="text-gray-400 shrink-0" />
+                                        <span className="text-sm text-gray-200">{profile.email}</span>
+                                        <span className="ml-auto text-[10px] text-gray-500 italic">Cannot change</span>
+                                    </div>
                                 </div>
+                                <EditField label="Phone" value={profile.phone} type="tel"
+                                    onSave={v => saveField('phone', v)} saving={saving} />
                             </div>
-                            <EditField label="Phone" value={profile.phone} type="tel"
-                                onSave={v => saveField('phone', v)} saving={saving} />
-                            {/* Home State dropdown */}
+                        </div>
+
+                        {/* Location */}
+                        <div className="bg-[#141414] rounded-2xl p-6 shadow-none border border-white/5 space-y-5">
+                            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                                <MapPin size={15} className="text-primary" /> Location
+                            </h2>
                             <div>
-                                <p className="text-10px font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Home State</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-2">Home State</p>
                                 <select
                                     value={profile.homestateid || ''}
                                     onChange={e => saveField('homestateid', e.target.value || null)}
-                                    className="w-full bg-surface-container-highest text-on-surface text-sm rounded-xl px-3 py-2
-                    border border-outline-variant focus:border-primary/50 outline-none">
+                                    className="w-full bg-[#222222] text-gray-200 text-sm rounded-xl px-4 py-3
+                    border border-gray-700 focus:border-primary/50 outline-none transition-all shadow-sm">
                                     <option value="">— Select State —</option>
                                     {states.map(s => (
                                         <option key={s.stateid} value={s.stateid}>{s.statename}</option>
@@ -634,9 +647,9 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Security */}
-                        <div className="bg-surface-container border border-outline-variant rounded-2xl p-5 space-y-3">
-                            <h2 className="text-sm font-bold uppercase tracking-widest text-on-surface-variant flex items-center gap-2">
-                                <Lock size={13} className="text-primary" /> Security
+                        <div className="bg-[#141414] rounded-2xl p-6 shadow-none border border-white/5 space-y-5">
+                            <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+                                <Lock size={15} className="text-error" /> Security
                             </h2>
                             <PasswordSection onToast={showToast} />
                         </div>
@@ -668,7 +681,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* ── RIGHT: Activity ── */}
-                    <div className="lg:col-span-3">
+                    <div className="lg:col-span-2 space-y-6">
                         {/* Tabs */}
                         <div className="flex gap-2 overflow-x-auto pb-1 mb-5 slim-scroll" >
                             <Tab active={activeTab === 'bookings'} onClick={() => setActiveTab('bookings')}

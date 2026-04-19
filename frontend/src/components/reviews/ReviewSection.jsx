@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Star, Edit2, Send, Lock, MessageSquare, ChevronDown } from 'lucide-react';
+import { Star, Edit2, Send, Lock, MessageSquare, ChevronDown, User } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import api from '../../services/api';
 import useAuth from '../../hooks/useAuth';
 
@@ -59,11 +60,15 @@ function ReviewCard({ review, isOwn, onEdit }) {
             }`}>
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                        <span className="text-xs font-bold text-primary">
-                            {review.fullname?.charAt(0)?.toUpperCase() || '?'}
-                        </span>
-                    </div>
+                    {review.avatar_url ? (
+                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-1 ring-outline-variant">
+                            <img src={review.avatar_url} alt={review.fullname} className="w-full h-full object-cover" />
+                        </div>
+                    ) : (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white" style={{ backgroundColor: `hsl(${(review.fullname?.charCodeAt(0) || 0) * 15 % 360}, 60%, 50%)` }}>
+                            <User size={20} />
+                        </div>
+                    )}
                     <div className="min-w-0">
                         <p className="text-sm font-semibold text-on-surface truncate">
                             {review.fullname}
@@ -76,33 +81,42 @@ function ReviewCard({ review, isOwn, onEdit }) {
                         <StarDisplay value={review.rating} size={12} />
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-10px text-on-surface-variant">
-                        {new Date(review.created_at).toLocaleDateString('en-IN', {
-                            day: 'numeric', month: 'short', year: 'numeric',
-                        })}
-                    </span>
-                    {isOwn && review.edit_count < 2 && (
-                        <button
-                            onClick={onEdit}
-                            className="p-1.5 rounded-lg text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all"
-                            aria-label="Edit review"
-                        >
-                            <Edit2 size={13} />
-                        </button>
-                    )}
-                    {isOwn && review.edit_count >= 2 && (
-                        <span title="Edit limit reached" className="p-1.5">
-                            <Lock size={13} className="text-on-surface-variant opacity-40" />
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-10px text-on-surface-variant mt-0.5">
+                            {new Date(review.created_at).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', year: 'numeric',
+                            })}
                         </span>
-                    )}
+                        {isOwn && review.edit_count < 2 && (
+                            <button
+                                onClick={onEdit}
+                                className="p-1 rounded-md text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all focus:outline-none"
+                                aria-label="Edit review"
+                            >
+                                <Edit2 size={13} />
+                            </button>
+                        )}
+                        {isOwn && review.edit_count >= 2 && (
+                            <span title="Edit limit reached" className="p-1">
+                                <Lock size={13} className="text-on-surface-variant opacity-40" />
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
-            {review.review_text && (
-                <p className="mt-2.5 text-sm text-on-surface-variant leading-relaxed pl-10">
-                    {review.review_text}
-                </p>
-            )}
+            {(() => {
+                const rawText = review.review_text || review.comment || review.content || review.reviewtext || '';
+                return rawText ? (
+                    <p className="mt-2.5 text-sm text-on-surface-variant leading-relaxed pl-10"
+                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(rawText) }}
+                    />
+                ) : (
+                    <p className="mt-2.5 text-sm text-on-surface-variant/50 italic leading-relaxed pl-10">
+                        No written review provided.
+                    </p>
+                );
+            })()}
             {isOwn && review.edit_count > 0 && (
                 <p className="mt-1 pl-10 text-10px text-on-surface-variant opacity-50">
                     Edited · {2 - review.edit_count} edit{2 - review.edit_count !== 1 ? 's' : ''} remaining
@@ -226,7 +240,7 @@ export default function ReviewSection({ eventId }) {
         setSubmitting(true);
         setSubmitError('');
         try {
-            await api.post('/events/reviews', { eventid: Number(eventId), rating, reviewtext });
+            await api.post('/events/reviews', { eventid: Number(eventId), rating, review_text: reviewtext });
             setShowForm(false);
             await Promise.all([fetchReviews(), fetchMyReview()]);
         } catch (err) {
@@ -242,7 +256,7 @@ export default function ReviewSection({ eventId }) {
         setSubmitting(true);
         setSubmitError('');
         try {
-            await api.patch(`/events/reviews/${myReview.review_id}`, { rating, reviewtext });
+            await api.patch(`/events/reviews/${myReview.review_id}`, { rating, review_text: reviewtext });
             setEditMode(false);
             await Promise.all([fetchReviews(), fetchMyReview()]);
         } catch (err) {
@@ -272,9 +286,8 @@ export default function ReviewSection({ eventId }) {
                     {scores && scores.totalreviews > 0 && (
                         <div className="flex items-center gap-2">
                             <StarDisplay value={parseFloat(scores.avgrating)} size={14} />
-                            <span className="text-sm font-bold text-on-surface">{scores.avgrating}</span>
-                            <span className="text-xs text-on-surface-variant">
-                                ({scores.totalreviews} review{scores.totalreviews !== 1 ? 's' : ''})
+                            <span className="text-sm font-bold text-on-surface">
+                                {scores.avgrating} ({scores.totalreviews} review{scores.totalreviews !== 1 ? 's' : ''})
                             </span>
                         </div>
                     )}
@@ -347,7 +360,7 @@ export default function ReviewSection({ eventId }) {
             {!loadingReviews && reviews.length > 0 && (
                 <div className="space-y-3">
                     {visibleReviews.map((review) => {
-                        const isOwn = review.user_id === user?.userid;
+                        const isOwn = review.user_id === (user?.user_id || user?.id || user?.userid);
                         return editMode && isOwn ? (
                             <ReviewForm
                                 key={review.review_id}

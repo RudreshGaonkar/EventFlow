@@ -317,7 +317,7 @@ const getReviewsByEvent = async (eventid) => {
     const [rows] = await pool.execute(
       `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
               r.rating, r.review_text, r.edit_count, r.created_at,
-              u.full_name
+              u.full_name, u.avatar_url
        FROM reviews r
        JOIN users u ON r.user_id = u.user_id
        WHERE r.event_id = ?
@@ -334,7 +334,7 @@ const getReviewsBySession = async (sessionid) => {
     const [rows] = await pool.execute(
       `SELECT r.review_id, r.user_id, r.event_id, r.session_id,
               r.rating, r.review_text, r.edit_count, r.created_at,
-              u.full_name
+              u.full_name, u.avatar_url
        FROM reviews r
        JOIN users u ON r.user_id = u.user_id
        WHERE r.session_id = ?
@@ -470,7 +470,7 @@ const getReviewById = async (reviewid) => {
   try {
     const pool = getPool();
     const [rows] = await pool.execute(
-      'SELECT * FROM reviews WHERE reviewid = ?',
+      'SELECT * FROM reviews WHERE review_id = ?',
       [reviewid]
     );
     return rows[0] || null;

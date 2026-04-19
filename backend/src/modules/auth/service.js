@@ -99,6 +99,10 @@ const logoutUser = async (req, res) => {
 };
 
 const getProfile = async (req, res) => {
+  // Guard: middleware must have attached a valid user
+  if (!req.user?.user_id) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
   try {
     const user = await findUserById(req.user.user_id);
     if (!user) {
@@ -133,6 +137,9 @@ const getStates = async (req, res) => {
 };
 
 const updateProfile = async (req, res) => {
+  if (!req.user?.user_id) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
   const { fullname, phone, homestateid } = req.body;
   const userid = req.user.user_id;
   const sets = [];
@@ -147,7 +154,7 @@ const updateProfile = async (req, res) => {
   try {
     await pool.execute(`UPDATE users SET ${sets.join(', ')} WHERE user_id = ?`, vals);
     const [[user]] = await pool.execute(
-      `SELECT u.user_id, u.full_name, u.email, u.phone, u.home_state_id, u.created_at,
+      `SELECT u.user_id, u.full_name, u.email, u.phone, u.home_state_id, u.avatar_url, u.created_at,
        r.role_name FROM users u JOIN roles r ON r.role_id = u.role_id WHERE u.user_id = ?`,
       [userid]
     );
@@ -175,13 +182,21 @@ const changePassword = async (req, res) => {
 };
 
 const updateAvatar = async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+  if (!req.file || !req.user?.user_id) {
+    return res.status(400).json({ success: false, message: 'Invalid request: missing file or user session' });
+  }
   try {
     const result = await uploadImageBuffer(req.file.buffer, 'avatars');
-    await pool.execute('UPDATE users SET avatarurl = ? WHERE userid = ?', [result.secure_url, req.user.userid]);
-    res.json({ success: true, data: { avatarurl: result.secure_url } });
+    
+    // Standardizing to snake_case column names (avatar_url and user_id)
+    await pool.execute('UPDATE users SET avatar_url = ? WHERE user_id = ?', [result.secure_url, req.user.user_id]);
+    
+    res.json({ 
+      success: true, 
+      data: { avatar_url: result.secure_url } 
+    });
   } catch (e) {
-    console.error('ERROR:', e.message);
+    console.error('[Auth] updateAvatar error:', e.message);
     res.status(500).json({ success: false, message: 'Avatar upload failed' });
   }
 };
