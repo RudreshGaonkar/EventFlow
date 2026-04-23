@@ -121,8 +121,12 @@ export default function Navbar() {
                   hover:bg-surface-container transition-all border border-transparent
                   hover:border-outline-variant/20"
               >
-                <div className="w-7 h-7 bg-primary-container rounded-full flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-on-primary-container">{initials}</span>
+                <div className="w-8 h-8 bg-primary-container rounded-full flex items-center justify-center overflow-hidden">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-on-primary-container">{initials}</span>
+                  )}
                 </div>
                 <span className="text-sm font-medium text-on-surface max-w-[100px] truncate">
                   {user.full_name?.split(' ')[0]}
@@ -212,8 +216,12 @@ export default function Navbar() {
               {user ? (
                 <>
                   <div className="flex items-center gap-3 pb-4 mb-3 border-b border-outline-variant/10">
-                    <div className="w-10 h-10 bg-primary-container rounded-full flex items-center justify-center">
-                      <span className="text-sm font-bold text-on-primary-container">{initials}</span>
+                    <div className="w-10 h-10 bg-primary-container rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-on-primary-container">{initials}</span>
+                      )}
                     </div>
                     <div>
                       <p className="text-base font-bold text-on-surface leading-tight">{user.full_name}</p>

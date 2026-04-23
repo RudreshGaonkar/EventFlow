@@ -170,7 +170,7 @@ const changePassword = async (req, res) => {
   const userid = req.user.user_id;
   try {
     const [[user]] = await pool.execute('SELECT password_hash FROM users WHERE user_id = ?', [userid]);
-    const match = await bcrypt.compare(currentPassword, user.passwordhash);
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
     if (!match) return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     const hash = await bcrypt.hash(newPassword, 12);
     await pool.execute('UPDATE users SET password_hash = ? WHERE user_id = ?', [hash, userid]);

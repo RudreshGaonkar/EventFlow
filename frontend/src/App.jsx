@@ -76,6 +76,9 @@ export default function App() {
           {/* ── Home — always BrowsePage ── */}
           <Route path="/" element={<PrivateRoute><BrowsePage /></PrivateRoute>} />
 
+          {/* ── Profile ── */}
+          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+
           {/* ── Events ── */}
           <Route path="/events/:event_id"
             element={<PrivateRoute><EventPage /></PrivateRoute>} />
@@ -150,7 +153,6 @@ export default function App() {
           <Route path="/venue-owner" element={
             <RoleGuard roles={['Venue Owner']}><VenueOwnerPage /></RoleGuard>
           } />
-          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
 
           {/* ── Fallback ── */}
           <Route path="*" element={<Navigate to="/" replace />} />

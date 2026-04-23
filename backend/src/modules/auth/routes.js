@@ -39,17 +39,6 @@ router.post('/logout', protect, logoutUser);
 // Get own profile
 router.get('/profile', protect, getProfile);
 
-// Update home state
-router.patch(
-  '/profile',
-  protect,
-  [
-    body('home_state_id').isInt({ min: 1 }).withMessage('Valid state is required'),
-  ],
-  validate,
-  updateProfile
-);
-
 // GET /auth/states
 router.get('/states', protect, getStates);
 
