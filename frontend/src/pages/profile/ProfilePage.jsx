@@ -415,7 +415,7 @@ export default function ProfilePage() {
                 ]);
                 setProfile(pRes.data.data);
                 setEditForm({
-                    fullname: pRes.data.data.fullname || '',
+                    fullname: pRes.data.data.full_name || '',
                     phone: pRes.data.data.phone || '',
                     homestateid: pRes.data.data.homestateid || ''
                 });
@@ -438,11 +438,11 @@ export default function ProfilePage() {
         setSaving(true);
         try {
             await api.patch('/auth/profile', {
-                fullname: editForm.fullname,
+                full_name: editForm.fullname,
                 phone: editForm.phone,
                 homestateid: editForm.homestateid || null
             });
-            setProfile(p => ({ ...p, fullname: editForm.fullname, phone: editForm.phone, homestateid: editForm.homestateid }));
+            setProfile(p => ({ ...p, full_name: editForm.fullname, phone: editForm.phone, homestateid: editForm.homestateid }));
             if (refreshUser) refreshUser();
             showToast('Profile updated');
             setIsEditing(false);
@@ -453,7 +453,7 @@ export default function ProfilePage() {
 
     const handleCancelEdit = () => {
         setEditForm({
-            fullname: profile.fullname || '',
+            fullname: profile.full_name || '',
             phone: profile.phone || '',
             homestateid: profile.homestateid || ''
         });
@@ -590,7 +590,7 @@ export default function ProfilePage() {
                                         <input type="text" value={editForm.fullname} onChange={e => setEditForm({ ...editForm, fullname: e.target.value })}
                                             className="w-full bg-[#222] text-white text-sm rounded-xl px-4 py-2.5 border border-white/20 focus:border-primary focus:bg-[#333] outline-none transition-all" />
                                     ) : (
-                                        <p className="text-sm text-gray-200">{profile.fullname}</p>
+                                        <p className="text-sm text-gray-200">{profile.full_name}</p>
                                     )}
                                 </div>
                                 {/* Email */}

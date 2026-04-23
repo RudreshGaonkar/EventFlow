@@ -30,7 +30,7 @@ router.post(
 router.get(
   '/my',
   protect,
-  allowRoles('Attendee'),
+  allowRoles('Attendee', 'Event Organizer', 'System Admin'),
   getMyBookings
 );
 

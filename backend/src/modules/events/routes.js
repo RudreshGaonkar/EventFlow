@@ -25,7 +25,7 @@ router.get('/', protect, getEvents);
 router.get(
   '/reviews/my',
   protect,
-  allowRoles('Attendee'),
+  allowRoles('Attendee', 'Event Organizer', 'System Admin'),
   getMyReviewHandler
 );
 
